@@ -6,14 +6,8 @@
 
 * Need help? ask bot with /help command
 
-#### Command list
+### Overview
 
-```md
-Everythin between curly braces "{ }" is considered as **parameter**, omit curly brace when giving parameter to the command
-Parameter can be **optional**, when prefixed with **?**{random}
-Each Parameter is **delimited** with **","** character
-* /sell {itemName}, {price}, ?{count}
-```
-
+![overview](./overview.png)
 
 * /sell {itemName}

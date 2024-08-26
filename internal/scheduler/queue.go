@@ -1,12 +1,10 @@
-package task_queue
+package scheduler
 
 import (
 	"errors"
-
-	"github.com/madchin/trader-bot/internal/gateway"
 )
 
-var ErrQueueIsEmpty = errors.New("queue is empty")
+var errQueueIsEmpty = errors.New("queue is empty")
 
 type node[T any] struct {
 	data T
@@ -20,9 +18,7 @@ type queue[T any] struct {
 	size  int
 }
 
-var Queue = queue[gateway.InteractionData]{}
-
-func (q *queue[T]) Enqueue(data T) {
+func (q *queue[T]) enqueue(data T) {
 	node := &node[T]{data: data}
 	if q.size == 0 {
 		q.first = node
@@ -35,10 +31,10 @@ func (q *queue[T]) Enqueue(data T) {
 	q.size++
 }
 
-func (q *queue[T]) Dequeue() (T, error) {
+func (q *queue[T]) dequeue() (T, error) {
 	var data T
 	if q.size == 0 {
-		return data, ErrQueueIsEmpty
+		return data, errQueueIsEmpty
 	}
 	if q.size == 1 {
 		data = q.first.data
@@ -51,8 +47,4 @@ func (q *queue[T]) Dequeue() (T, error) {
 	}
 	q.size--
 	return data, nil
-}
-
-func (q *queue[T]) Size() int {
-	return q.size
 }

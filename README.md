@@ -9,5 +9,3 @@
 ### Overview
 
 ![overview](./overview.png)
-
-* /sell {itemName}

@@ -8,4 +8,4 @@
 
 ### Overview
 
-![overview](./overview.png)
+![overview](./arch_overview.png)

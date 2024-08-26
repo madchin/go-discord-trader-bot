@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// FIXME
+// fix all tests -- added new type offerType / vendor
 func TestOffersEquality(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -14,62 +16,62 @@ func TestOffersEquality(t *testing.T) {
 	}{
 		{
 			"equal",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
 			true,
 		},
 		{
 			"not equal",
-			Offer{product{"name1", 1.1}, 1},
-			Offer{product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
 			false,
 		},
 		{
 			"equal",
-			Offer{product{"name1", 1.0}, 2},
-			Offer{product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
 			true,
 		},
 		{
 			"not equal",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name1", 1.1}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 1},
 			false,
 		},
 		{
 			"equal",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name1", 1.0}, 2},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
 			true,
 		},
 		{
 			"not equal",
-			Offer{product{"name2", 1.0}, 1},
-			Offer{product{"name1", 1.0}, 2},
+			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name2", 1.0}, 2},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.0}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name2", 1.1}, 2},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.1}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{product{"name2", 1.1}, 1},
-			Offer{product{"name1", 1.0}, 2},
+			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.1}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
 			false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if actual := test.offer1.IsEqual(test.offer2); actual != test.expected {
+			if actual := test.offer1.isSameOffer(test.offer2); actual != test.expected {
 				t.Fatalf("Expected: %v Actual: %v", actual, test.expected)
 			}
 		})
@@ -85,44 +87,44 @@ func TestOffersMerge(t *testing.T) {
 	}{
 		{
 			"merged",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
 			2,
 		},
 		{
 			"merged",
-			Offer{product{"name1", 1.1}, 1},
-			Offer{product{"name1", 1.0}, 3},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 3},
 			4,
 		},
 		{
 			"merged",
-			Offer{product{"name1", 1.0}, 2},
-			Offer{product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
 			3,
 		},
 		{
 			"merged",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name1", 1.1}, 999},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 999},
 			1000,
 		},
 		{
 			"merged",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name1", 1.0}, -1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, -1},
 			0,
 		},
 		{
 			"merged",
-			Offer{product{"name1", 1.0}, 1},
-			Offer{product{"name1", 1.0}, -2},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, -2},
 			-1,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			merged := test.offer1.Merge(test.offer2)
+			merged := test.offer1.merge(test.offer2)
 			if actual := merged.count; actual != test.expected {
 				t.Fatalf("Expected %d Actual %d", test.expected, actual)
 			}
@@ -132,7 +134,7 @@ func TestOffersMerge(t *testing.T) {
 
 func TestNewOffer(t *testing.T) {
 	t.Run("success creation", func(t *testing.T) {
-		offer, err := NewOffer(product{"e", 1.0}, 2)
+		offer, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, 2)
 		if err != nil {
 			t.Fatalf("creation failed %v", err)
 		}
@@ -147,7 +149,7 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("fail when offer count < 0", func(t *testing.T) {
-		_, err := NewOffer(product{"e", 1.0}, -1)
+		_, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, -1)
 		if err == nil {
 			t.Fatalf("should fail, but didnt")
 		}
@@ -156,7 +158,7 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("fail when offer count = 0", func(t *testing.T) {
-		_, err := NewOffer(product{"e", 1.0}, 0)
+		_, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, 0)
 		if err == nil {
 			t.Fatalf("should fail, but didnt")
 		}
@@ -165,7 +167,7 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("success when offer count > 0", func(t *testing.T) {
-		_, err := NewOffer(product{"e", 1.0}, 2)
+		_, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, 2)
 		if err != nil {
 			t.Fatalf("expected to create offer but error occured: err %v", err)
 		}
@@ -174,7 +176,7 @@ func TestNewOffer(t *testing.T) {
 
 func TestNewVendor(t *testing.T) {
 	t.Run("should fail when name is empty", func(t *testing.T) {
-		_, err := NewVendor("")
+		_, err := newVendor("")
 		if err == nil {
 			t.Fatalf("expected to fail")
 		}
@@ -184,7 +186,7 @@ func TestNewVendor(t *testing.T) {
 	})
 
 	t.Run("success when name len = 1", func(t *testing.T) {
-		vendor, err := NewVendor("a")
+		vendor, err := newVendor("a")
 		if err != nil {
 			t.Fatalf("expected to create vendor. actual err: %v", err)
 		}

@@ -33,7 +33,7 @@ func (p product) validate() error {
 	return nil
 }
 
-func (v Vendor) validate() error {
+func (v vendor) validate() error {
 	if v.name == "" {
 		return validationError(ErrVendorIsEmpty)
 	}

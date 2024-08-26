@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
 	"os"
@@ -8,19 +9,17 @@ import (
 
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/madchin/trader-bot/internal/gateway"
+	"github.com/madchin/trader-bot/internal/scheduler"
+	"github.com/madchin/trader-bot/internal/service"
+	"github.com/madchin/trader-bot/internal/storage"
+	"github.com/madchin/trader-bot/internal/worker"
 )
 
-type h struct{}
-
-func (h h) Enqueue(data gateway.InteractionData) error {
-	return nil
-}
-
 func main() {
-	interruptSignalChan := make(chan os.Signal, 1)
-	signal.Notify(interruptSignalChan, os.Interrupt)
+	ctx := context.Background()
+	ctx, _ = signal.NotifyContext(ctx, os.Interrupt)
 	botToken, applicationId, guildId := requiredEnvs()
-	gateway, err := gateway.NewGatewaySession(botToken, applicationId, guildId, h{})
+	gateway, err := gateway.NewGatewaySession(botToken, applicationId, guildId, scheduler.Scheduler)
 	if err != nil {
 		panic(err)
 	}
@@ -28,8 +27,11 @@ func main() {
 	if err := gateway.OpenConnection(); err != nil {
 		panic(err)
 	}
-
-	<-interruptSignalChan
+	storage := storage.New()
+	factoryWorkers := worker.NewFactory(100)
+	service := service.New(storage, gateway)
+	go worker.Spawner(ctx, service, scheduler.Scheduler, factoryWorkers)
+	<-ctx.Done()
 }
 
 /*

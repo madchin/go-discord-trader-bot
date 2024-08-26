@@ -59,6 +59,7 @@ func (s *sell) Update(ctx context.Context, interaction *discordgo.Interaction, o
 	return nil
 }
 
+// FIXME listing offers with specified users?
 func (s *sell) List(ctx context.Context, interaction *discordgo.Interaction, offer offer.Offer) error {
 	offers, err := s.storage.List(offer.Product().Name())
 	if err != nil {

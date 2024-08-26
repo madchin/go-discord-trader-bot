@@ -20,6 +20,7 @@ func New() *OfferStorage {
 	return &OfferStorage{make(offer.Offers, 50)}
 }
 
+// FIXME mitigate from inmemory storage
 func (storage *OfferStorage) List(productName string) (offer.Offers, error) {
 	specifiedOffers := make(offer.Offers, len(storage.offers))
 	for vendor, offers := range storage.offers {

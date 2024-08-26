@@ -10,8 +10,6 @@ import (
 	"github.com/madchin/trader-bot/internal/service"
 )
 
-var t time.Time
-
 // we assume its concurrent safe
 type scheduler interface {
 	Delegate() (*gateway.InteractionData, error)
@@ -33,14 +31,13 @@ func spawn(service *service.Service, scheduler scheduler, factoryWorkers *factor
 
 func Spawner(ctx context.Context, service *service.Service, scheduler scheduler, factoryWorkers *factoryWorkers) {
 	for {
+		ctx, _ := context.WithTimeout(ctx, time.Nanosecond*1)
 		job, _ := scheduler.Delegate()
 		if job == nil {
 			time.Sleep(time.Second * 5)
 			continue
 		}
 		worker, err := spawn(service, scheduler, factoryWorkers)
-		t = time.Now()
-		log.Printf("Starting worker: %v", 0)
 		if err != nil {
 			log.Printf("worker spawn error: %v", err)
 			time.Sleep(time.Second * 1)
@@ -74,7 +71,6 @@ func (w *worker) executeBuyOffer(ctx context.Context, jobData *gateway.Interacti
 	case offer.Update:
 		w.service.BuyService().Update(ctx, jobData.Interaction(), jobData.Offer())
 	}
-	log.Printf("worker done %v", time.Now().UnixMilli()-t.UnixMilli())
 }
 
 func (w *worker) executeSellOffer(ctx context.Context, jobData *gateway.InteractionData) {

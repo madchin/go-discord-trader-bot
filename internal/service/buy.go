@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/madchin/trader-bot/internal/offer"
+	"github.com/madchin/trader-bot/internal/domain/offer"
 )
 
 type buy struct {

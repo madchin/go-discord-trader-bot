@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/madchin/trader-bot/internal/domain/offer"
 	"github.com/madchin/trader-bot/internal/gateway"
-	"github.com/madchin/trader-bot/internal/offer"
 	"github.com/madchin/trader-bot/internal/service"
 )
 

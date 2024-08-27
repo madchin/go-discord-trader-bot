@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/madchin/trader-bot/internal/offer"
+	"github.com/madchin/trader-bot/internal/domain/offer"
 )
 
 var (

@@ -1,4 +1,4 @@
-### Trader Bot
+## Trader Bot
 
 * Bot for trading items
 
@@ -16,16 +16,19 @@
             update
             list
 ```
-* Need help? ask bot with /help command **NOT AVAILABLE**
+* Need help? ask bot with /help command **CURRENTLY NOT AVAILABLE**
 
-### Overview
+---
+
+## Project overview
 
 ![overview](./arch_overview2.png)
 
+--- 
 
-### How to run project
+## How to run project
 
-#### Prerequisities:
+### Prerequisities:
 
 * Installed docker
 
@@ -52,7 +55,9 @@ PUBLIC_KEY=
     * **GUILD_ID** is also obtainable from **Discord**, but from *server* where app is installed ofc.
 ```
 
-#### Running
+---
+
+### Running
 
 * Via ```make```
 

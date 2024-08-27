@@ -34,7 +34,6 @@ func Spawner(ctx context.Context, service *service.Service, scheduler scheduler,
 		ctx, _ := context.WithTimeout(ctx, time.Nanosecond*1)
 		job, _ := scheduler.Delegate()
 		if job == nil {
-			time.Sleep(time.Second * 5)
 			continue
 		}
 		worker, err := spawn(service, scheduler, factoryWorkers)

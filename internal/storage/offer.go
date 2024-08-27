@@ -50,8 +50,8 @@ func (storage *OfferStorage) Add(off offer.Offer) error {
 	}
 	storage.offers[off.Vendor()] = append(make([]offer.Offer, 1), off)
 	log.Printf("adding %v", off)
-	data, _ := storage.ListAll()
-	log.Printf("actual storage list: %v", data)
+	//data, _ := storage.ListAll()
+	//log.Printf("actual storage list: %v", data)
 	return nil
 }
 func (storage *OfferStorage) Remove(off offer.Offer) error {

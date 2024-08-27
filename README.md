@@ -61,12 +61,12 @@ PUBLIC_KEY=
 
 * Via ```make```
 
-    * make build-dev ```dev environment```
+    * ```make build-dev``` Debug run-time environment
 
-    * make build-prod ```prod environment```
+    * ```make build-prod``` Prod run-time environment
 
 * Via ```docker compose```
 
-    * docker compose run --rm --name DEBUG -e RUNTIME_ENVIRONMENT=DEV -d trader
+    * ```docker compose run --rm --name DEBUG -e RUNTIME_ENVIRONMENT=DEV -d trader``` Debug run-time environment
 
-    * docker compose up -d
+    * ```docker compose up -d``` Prod run-time environment

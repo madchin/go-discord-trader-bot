@@ -81,6 +81,14 @@ func (offerStorage *offerStorage) ListVendorOffers(ctx context.Context, vendorNa
 }
 
 func (offerStorage *offerStorage) add(ctx context.Context, dbTable string, offer offer.Offer) error {
+	offers, _ := offerStorage.listVendorOffers(ctx, dbTable, offer.Vendor().Name())
+	if offers.Contains(offer) {
+		offer = offers.MergeSameOffers(offer)
+		err := offerStorage.updateCount(ctx, dbTable, offer, offer.Count())
+		if err != nil {
+			return fmt.Errorf("database error add, wanted to update offer because you have already same %w", err)
+		}
+	}
 	query := fmt.Sprintf("INSERT INTO %s (vendor,price,productName,count) VALUES ($1,$2,$3,$4)", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
 		offer.Vendor().Name(),
@@ -101,15 +109,12 @@ func (offerStorage *offerStorage) add(ctx context.Context, dbTable string, offer
 }
 
 func (offerStorage *offerStorage) remove(ctx context.Context, dbTable string, offer offer.Offer) error {
-	offers, err := offerStorage.listOffers(ctx, dbTable, offer.Product().Name())
-	if err != nil {
-		return fmt.Errorf("unable to remove offer because you do not have any")
-	}
+	offers, _ := offerStorage.listOffers(ctx, dbTable, offer.Product().Name())
 	if !offers.Contains(offer) {
 		return fmt.Errorf("unable to remove offer because you do not have this one")
 	}
 	query := fmt.Sprintf("DELETE FROM %s WHERE price=$1 AND vendor=$2 AND productName=$3", dbTable)
-	_, err = offerStorage.db.Exec(ctx, query,
+	_, err := offerStorage.db.Exec(ctx, query,
 		offer.Product().Price(),
 		offer.Vendor().Name(),
 		offer.Product().Name(),
@@ -127,6 +132,10 @@ func (offerStorage *offerStorage) remove(ctx context.Context, dbTable string, of
 }
 
 func (offerStorage *offerStorage) update(ctx context.Context, dbTable string, oldOffer offer.Offer, updateOffer offer.Offer) error {
+	offers, _ := offerStorage.listVendorOffers(ctx, dbTable, oldOffer.Vendor().Name())
+	if !offers.Contains(oldOffer) {
+		return fmt.Errorf("unable to update offer because you do not have it")
+	}
 	query := fmt.Sprintf("UPDATE %s SET price=$1, count=$2 WHERE vendor=$3 AND productName=$4 AND price=$5", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
 		updateOffer.Product().Price(),
@@ -141,6 +150,21 @@ func (offerStorage *offerStorage) update(ctx context.Context, dbTable string, ol
 	return nil
 }
 
+func (offerStorage *offerStorage) updateCount(ctx context.Context, dbTable string, offer offer.Offer, count int) error {
+	query := fmt.Sprintf("UPDATE %s SET count=$2 WHERE vendor=$3 AND productName=$4 AND price=$5", dbTable)
+	_, err := offerStorage.db.Exec(ctx, query,
+		count,
+		offer.Vendor().Name(),
+		offer.Product().Name(),
+		offer.Product().Price(),
+	)
+	if err != nil {
+		return fmt.Errorf("update count for offer with product name %s and vendor %s failed: err: %w", offer.Product().Name(), offer.Vendor().Name(), err)
+	}
+	return nil
+}
+
+// FIXME scanning offers to offer.Offer as db type is different than domain one
 func (offerStorage *offerStorage) listOffers(ctx context.Context, dbTable string, productName string) (offer.Offers, error) {
 	query := fmt.Sprintf("SELECT * FROM %s WHERE productName=$1", dbTable)
 	rows, err := offerStorage.db.Query(ctx, query, productName)

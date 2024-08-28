@@ -72,3 +72,12 @@ func (o Offers) Contains(candidate Offer) (contains bool) {
 	}
 	return
 }
+
+func (o Offers) MergeSameOffers(candidate Offer) Offer {
+	for _, off := range o {
+		if off.isSameOffer(candidate) {
+			candidate = off.merge(candidate)
+		}
+	}
+	return candidate
+}

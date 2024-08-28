@@ -1,87 +1,211 @@
 package storage
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"log"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/madchin/trader-bot/internal/domain/offer"
 )
 
-var (
-	ErrOffersNotExists = errors.New("off offers not exists")
-)
-
-type OfferStorage struct {
-	offers offer.Offers
+type offerStorage struct {
+	db *pgx.Conn
 }
 
-func New() *OfferStorage {
-	return &OfferStorage{make(offer.Offers, 50)}
+func New(db *pgx.Conn) *offerStorage {
+	return &offerStorage{db}
 }
 
-// FIXME mitigate from inmemory storage
-func (storage *OfferStorage) List(productName string) (offer.Offers, error) {
-	specifiedOffers := make(offer.Offers, len(storage.offers))
-	for vendor, offers := range storage.offers {
-		for i := 0; i < len(offers); i++ {
-			if offers[i].Product().Name() == productName {
-				specifiedOffers[vendor] = offers
-			}
-		}
+func (offerStorage *offerStorage) Add(ctx context.Context, offer offer.Offer) error {
+	tableName := ctx.Value("dbTableDescriptor").(string)
+	if err := offerStorage.createTable(ctx, tableName); err != nil {
+		return fmt.Errorf("database error add for product %s vendor %s price %f count %d: err %w",
+			offer.Product().Name(),
+			offer.Vendor().Name(),
+			offer.Product().Price(),
+			offer.Count(),
+			err,
+		)
 	}
-	return specifiedOffers, nil
+	return offerStorage.add(ctx, tableName, offer)
 }
-func (storage *OfferStorage) ListAll() (offer.Offers, error) {
-	if len(storage.offers) == 0 {
-		return nil, fmt.Errorf("storage list all for %w", ErrOffersNotExists)
+
+func (offerStorage *offerStorage) Remove(ctx context.Context, offer offer.Offer) error {
+	tableName := ctx.Value("dbTableDescriptor").(string)
+	if err := offerStorage.createTable(ctx, tableName); err != nil {
+		return fmt.Errorf("database error remove for product %s vendor %s price %f count %d: err %w",
+			offer.Product().Name(),
+			offer.Vendor().Name(),
+			offer.Product().Price(),
+			offer.Count(),
+			err,
+		)
 	}
-	return storage.offers, nil
+	return offerStorage.remove(ctx, tableName, offer)
 }
-func (storage *OfferStorage) Add(off offer.Offer) error {
-	if offers, ok := storage.offers[off.Vendor()]; ok {
-		offer, mergedIndexes, err := off.Add(offers)
-		if err != nil {
-			return fmt.Errorf("storage offer add %s for vendor %v %w", off.Product().Name(), off.Vendor(), err)
-		}
-		mergeCount := storage.removeMergedOffers(offer, mergedIndexes)
-		log.Printf("merged count %d", mergeCount)
-		storage.offers[off.Vendor()] = append(offers, offer)
+
+func (offerStorage *offerStorage) Update(ctx context.Context, oldOffer offer.Offer, updateOffer offer.Offer) error {
+	tableName := ctx.Value("dbTableDescriptor").(string)
+	if err := offerStorage.createTable(ctx, tableName); err != nil {
+		return fmt.Errorf("database error update for product %s vendor %s price %f count %d: err %w",
+			oldOffer.Product().Name(),
+			oldOffer.Vendor().Name(),
+			oldOffer.Product().Price(),
+			oldOffer.Count(),
+			err,
+		)
 	}
-	storage.offers[off.Vendor()] = append(make([]offer.Offer, 1), off)
-	log.Printf("adding %v", off)
-	//data, _ := storage.ListAll()
-	//log.Printf("actual storage list: %v", data)
+	return offerStorage.update(ctx, tableName, oldOffer, updateOffer)
+}
+
+func (offerStorage *offerStorage) ListOffers(ctx context.Context, productName string) (offer.Offers, error) {
+	tableName := ctx.Value("dbTableDescriptor").(string)
+	if err := offerStorage.createTable(ctx, tableName); err != nil {
+		return offer.Offers{}, fmt.Errorf("database error list offers for product %s: err %w",
+			productName,
+			err,
+		)
+	}
+	return offerStorage.listOffers(ctx, tableName, productName)
+}
+
+func (offerStorage *offerStorage) ListVendorOffers(ctx context.Context, vendorName string) (offer.Offers, error) {
+	tableName := ctx.Value("dbTableDescriptor").(string)
+	if err := offerStorage.createTable(ctx, tableName); err != nil {
+		return offer.Offers{}, fmt.Errorf("database error list offers for vendor %s: err %w",
+			vendorName,
+			err,
+		)
+	}
+	return offerStorage.listVendorOffers(ctx, tableName, vendorName)
+}
+
+func (offerStorage *offerStorage) add(ctx context.Context, dbTable string, offer offer.Offer) error {
+	query := fmt.Sprintf("INSERT INTO %s (vendor,price,productName,count) VALUES ($1,$2,$3,$4)", dbTable)
+	_, err := offerStorage.db.Exec(ctx, query,
+		offer.Vendor().Name(),
+		offer.Product().Price(),
+		offer.Product().Name(),
+		offer.Count(),
+	)
+	if err != nil {
+		return fmt.Errorf("database error add for product %s vendor %s price %f count %d: err %w",
+			offer.Product().Name(),
+			offer.Vendor().Name(),
+			offer.Product().Price(),
+			offer.Count(),
+			err,
+		)
+	}
 	return nil
 }
-func (storage *OfferStorage) Remove(off offer.Offer) error {
-	if offers, ok := storage.offers[off.Vendor()]; ok {
-		removeIndice, err := off.Remove(offers)
-		if err != nil {
-			return fmt.Errorf("storage offer remove %s for vendor %v %w", off.Product().Name(), off.Vendor(), err)
-		}
-		offers[removeIndice] = offer.Offer{}
-		return nil
+
+func (offerStorage *offerStorage) remove(ctx context.Context, dbTable string, offer offer.Offer) error {
+	offers, err := offerStorage.listOffers(ctx, dbTable, offer.Product().Name())
+	if err != nil {
+		return fmt.Errorf("unable to remove offer because you do not have any")
 	}
-	return fmt.Errorf("storage remove offer %s for vendor %v %w", off.Product().Name(), off.Vendor(), ErrOffersNotExists)
-}
-func (storage *OfferStorage) Update(off offer.Offer) error {
-	if offers, ok := storage.offers[off.Vendor()]; ok {
-		offer, updateIndice, err := off.Update(offers)
-		if err != nil {
-			return fmt.Errorf("storage update offer %s for vendor %v %w", off.Product().Name(), off.Vendor(), err)
-		}
-		offers[updateIndice] = offer
+	if !offers.Contains(offer) {
+		return fmt.Errorf("unable to remove offer because you do not have this one")
 	}
-	return fmt.Errorf("storage update offer %s for vendor %v %w", off.Product().Name(), off.Vendor(), ErrOffersNotExists)
+	query := fmt.Sprintf("DELETE FROM %s WHERE price=$1 AND vendor=$2 AND productName=$3", dbTable)
+	_, err = offerStorage.db.Exec(ctx, query,
+		offer.Product().Price(),
+		offer.Vendor().Name(),
+		offer.Product().Name(),
+	)
+	if err != nil {
+		return fmt.Errorf("database error remove for product %s vendor %s price %f count %d: %w",
+			offer.Product().Name(),
+			offer.Vendor().Name(),
+			offer.Product().Price(),
+			offer.Count(),
+			err,
+		)
+	}
+	return nil
 }
 
-func (storage *OfferStorage) removeMergedOffers(off offer.Offer, mergedIndexes []int) (merged int) {
-	if offers, ok := storage.offers[off.Vendor()]; ok {
-		for _, idx := range mergedIndexes {
-			offers[idx] = offer.Offer{}
-			merged++
+func (offerStorage *offerStorage) update(ctx context.Context, dbTable string, oldOffer offer.Offer, updateOffer offer.Offer) error {
+	query := fmt.Sprintf("UPDATE %s SET price=$1, count=$2 WHERE vendor=$3 AND productName=$4 AND price=$5", dbTable)
+	_, err := offerStorage.db.Exec(ctx, query,
+		updateOffer.Product().Price(),
+		updateOffer.Count(),
+		oldOffer.Vendor().Name(),
+		oldOffer.Product().Name(),
+		oldOffer.Product().Price(),
+	)
+	if err != nil {
+		return fmt.Errorf("update for offer with product name %s and vendor %s failed: err: %w", oldOffer.Product().Name(), oldOffer.Vendor().Name(), err)
+	}
+	return nil
+}
+
+func (offerStorage *offerStorage) listOffers(ctx context.Context, dbTable string, productName string) (offer.Offers, error) {
+	query := fmt.Sprintf("SELECT * FROM %s WHERE productName=$1", dbTable)
+	rows, err := offerStorage.db.Query(ctx, query, productName)
+	if err != nil {
+		return nil, fmt.Errorf("database error sell offers listing for product %s %w", productName, err)
+	}
+	offers := make(offer.Offers, 0, 5)
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("database error sell offers listing during retrieving row: %w", err)
+		}
+		var offer offer.Offer
+		err := rows.Scan(&offer)
+		if err != nil {
+			return nil, fmt.Errorf("database error sell offers listing during retrieving row: %w", err)
 		}
 	}
-	return
+	return offers, nil
 }
+
+func (offerStorage *offerStorage) listVendorOffers(ctx context.Context, dbTable, vendorName string) (offer.Offers, error) {
+	query := fmt.Sprintf("SELECT * FROM %s WHERE vendor=$1", dbTable)
+	rows, err := offerStorage.db.Query(ctx, query, vendorName)
+	if err != nil {
+		return nil, fmt.Errorf("database error sell offers listing for vendor %s %w", vendorName, err)
+	}
+	offers := make(offer.Offers, 0, 5)
+	for rows.Next() {
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("database error sell offers listing during retrieving row: %w", err)
+		}
+		var offer offer.Offer
+		err := rows.Scan(&offer)
+		if err != nil {
+			return nil, fmt.Errorf("database error sell offers listing during retrieving row: %w", err)
+		}
+	}
+	return offers, nil
+}
+
+func (offerStorage *offerStorage) createTable(ctx context.Context, name string) error {
+	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (
+	id SERIAL PRIMARY KEY, 
+	vendor TEXT NOT NULL, 
+	price NUMERIC(7,5) NOT NULL, 
+	productName TEXT NOT NULL, 
+	count INTEGER NOT NULL)`, name,
+	)
+	_, err := offerStorage.db.Exec(ctx, query)
+	if err != nil {
+		return fmt.Errorf("error occured during creating table with name %s err: %v", name, err)
+	}
+	return nil
+}
+
+// 1. listing all offers with productName = "elo"
+// 2. Adding offer
+//		a) when offer productName = $productName and price = $price and vendor = $vendor, we only increase count += $count
+//		else add new record
+// 3. Removing offer
+//		a) when productName = $productName and price = $price and vendor = $vendor we remove
+//		else do nothing
+// 4. Update offer
+//		a) when productName = $productName and price = $oldPrice and vendor = $vendor we update $price with $newPrice
+//		else do nothing
+//											 Tables
+//											  Offer
+//							count 	    vendor 		name 		price

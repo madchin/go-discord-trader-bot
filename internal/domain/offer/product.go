@@ -7,9 +7,9 @@ type product struct {
 
 func NewProduct(name string, price float64) (product, error) {
 	p := product{name, price}
-	if err := p.validate(); err != nil {
-		return product{}, err
-	}
+	// if err := p.validate(); err != nil {
+	// 	return product{}, err
+	// }
 	return p, nil
 }
 

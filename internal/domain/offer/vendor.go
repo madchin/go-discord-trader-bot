@@ -11,3 +11,7 @@ func newVendor(name string) (vendor, error) {
 	}
 	return v, nil
 }
+
+func (v vendor) Name() string {
+	return v.name
+}

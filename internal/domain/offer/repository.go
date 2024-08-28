@@ -1,9 +1,11 @@
 package offer
 
+import "context"
+
 type Repository interface {
-	List(productName string) (Offers, error)
-	ListAll() (Offers, error)
-	Add(offer Offer) error
-	Remove(offer Offer) error
-	Update(offer Offer) error
+	ListOffers(ctx context.Context, productName string) (Offers, error)
+	ListVendorOffers(ctx context.Context, vendorName string) (Offers, error)
+	Add(ctx context.Context, offer Offer) error
+	Remove(ctx context.Context, offer Offer) error
+	Update(ctx context.Context, oldOffer Offer, updateOffer Offer) error
 }

@@ -31,9 +31,10 @@ func spawn(service *service.Service, scheduler scheduler, factoryWorkers *factor
 
 func Spawner(ctx context.Context, service *service.Service, scheduler scheduler, factoryWorkers *factoryWorkers) {
 	for {
-		ctx, _ := context.WithTimeout(ctx, time.Nanosecond*1)
+		ctx, _ := context.WithTimeout(ctx, time.Second*5)
 		job, _ := scheduler.Delegate()
 		if job == nil {
+			time.Sleep(time.Millisecond * 100)
 			continue
 		}
 		worker, err := spawn(service, scheduler, factoryWorkers)
@@ -50,10 +51,12 @@ func (w *worker) execute(ctx context.Context, jobData *gateway.InteractionData) 
 	off := jobData.Offer()
 	log.Printf("executing worker job...")
 	if off.Type() == offer.Buy {
+		ctx = context.WithValue(ctx, "dbTableDescriptor", "buy"+"_"+jobData.Interaction().GuildID)
 		log.Printf("executing buy offer with job data %v", jobData)
 		w.executeBuyOffer(ctx, jobData)
 	}
 	if off.Type() == offer.Sell {
+		ctx = context.WithValue(ctx, "dbTableDescriptor", "sell"+"_"+jobData.Interaction().GuildID)
 		log.Printf("executing sell offer with job data %v", jobData)
 		w.executeSellOffer(ctx, jobData)
 	}
@@ -62,25 +65,49 @@ func (w *worker) execute(ctx context.Context, jobData *gateway.InteractionData) 
 func (w *worker) executeBuyOffer(ctx context.Context, jobData *gateway.InteractionData) {
 	switch jobData.Offer().Action() {
 	case offer.Add:
-		w.service.BuyService().Add(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.BuyService().Add(ctx, jobData.Interaction(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker buy add: %v", err)
+		}
 	case offer.List:
-		w.service.BuyService().List(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.BuyService().List(ctx, jobData.Interaction(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker buy list: %v", err)
+		}
 	case offer.Remove:
-		w.service.BuyService().Remove(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.BuyService().Remove(ctx, jobData.Interaction(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker buy remove: %v", err)
+		}
 	case offer.Update:
-		w.service.BuyService().Update(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.BuyService().Update(ctx, jobData.Interaction(), jobData.Offer(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker buy update: %v", err)
+		}
 	}
 }
 
 func (w *worker) executeSellOffer(ctx context.Context, jobData *gateway.InteractionData) {
 	switch jobData.Offer().Action() {
 	case offer.Add:
-		w.service.SellService().Add(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.SellService().Add(ctx, jobData.Interaction(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker sell add: %v", err)
+		}
 	case offer.List:
-		w.service.SellService().List(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.SellService().List(ctx, jobData.Interaction(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker sell list: %v", err)
+		}
 	case offer.Remove:
-		w.service.SellService().Remove(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.SellService().Remove(ctx, jobData.Interaction(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker sell remove: %v", err)
+		}
 	case offer.Update:
-		w.service.SellService().Update(ctx, jobData.Interaction(), jobData.Offer())
+		err := w.service.SellService().Update(ctx, jobData.Interaction(), jobData.Offer(), jobData.Offer())
+		if err != nil {
+			log.Printf("error in worker sell update: %v", err)
+		}
 	}
 }

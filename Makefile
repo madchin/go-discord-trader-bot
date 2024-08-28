@@ -1,4 +1,4 @@
-build-dev:
-	docker compose run --rm --name DEBUG -e RUNTIME_ENVIRONMENT=DEV -d trader
+build-debug:
+	docker compose -f compose.dev.yaml up -d
 build-prod:
-	docker compose up -d
+	docker compose -f compose.prod.yaml up -d

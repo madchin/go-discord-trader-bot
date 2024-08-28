@@ -1,0 +1,35 @@
+services:
+  trader:
+    build: .
+    secrets:
+      - db_env
+      - app_env
+    environment:
+      APP_ENV_FILE: /run/secrets/app_env
+      DB_ENV_FILE: /run/secrets/db_env
+    depends_on:
+      - db
+  db:
+    image: postgres:16.4
+    secrets:
+      - db_env
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_env
+      POSTGRES_USER_FILE: /run/secrets/db_env
+      POSTGRES_DB_FILE: /run/secrets/db_env
+    ports:
+      - 127.0.0.1:5432:5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db-data:/var/lib/postgresql/data
+secrets:
+  app_env:
+    file: ./.app.env
+  db_env:
+    file: ./.db.env
+volumes:
+  db-data:

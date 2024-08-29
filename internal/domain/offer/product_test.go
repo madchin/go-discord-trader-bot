@@ -5,9 +5,11 @@ import (
 	"testing"
 )
 
-func TestProductCreation(t *testing.T) {
+// FIXME fix all tests
+func TestProductValidation(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		p, err := NewProduct("a", 1.0)
+		p := NewProduct("a", 1.0)
+		err := p.validate()
 		if err != nil {
 			t.Fatalf("error occured but sohuldnt, %v", err)
 		}
@@ -20,7 +22,8 @@ func TestProductCreation(t *testing.T) {
 	})
 
 	t.Run("should fail when name is empty", func(t *testing.T) {
-		_, err := NewProduct("", 1.0)
+		prod := NewProduct("", 1.0)
+		err := prod.validate()
 		if err == nil {
 			t.Fatalf("error should occur")
 		}
@@ -29,7 +32,8 @@ func TestProductCreation(t *testing.T) {
 		}
 	})
 	t.Run("should fail when price < 0", func(t *testing.T) {
-		_, err := NewProduct("a", -1.0)
+		prod := NewProduct("a", -1.0)
+		err := prod.validate()
 		if err == nil {
 			t.Fatalf("error should occur")
 		}
@@ -39,13 +43,15 @@ func TestProductCreation(t *testing.T) {
 	})
 
 	t.Run("success when price = 0", func(t *testing.T) {
-		_, err := NewProduct("a", 0.0)
+		prod := NewProduct("a", 0.0)
+		err := prod.validate()
 		if err != nil {
 			t.Fatalf("error occured but shouldnot. err: %v", err)
 		}
 	})
 	t.Run("success when name len = 1", func(t *testing.T) {
-		_, err := NewProduct("a", 1)
+		prod := NewProduct("a", 1)
+		err := prod.validate()
 		if err != nil {
 			t.Fatalf("error occured, but shouldnt, %v", err)
 		}

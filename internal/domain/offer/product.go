@@ -5,12 +5,8 @@ type product struct {
 	price float64
 }
 
-func NewProduct(name string, price float64) (product, error) {
-	p := product{name, price}
-	// if err := p.validate(); err != nil {
-	// 	return product{}, err
-	// }
-	return p, nil
+func NewProduct(name string, price float64) product {
+	return product{name, price}
 }
 
 func (p product) Name() string {

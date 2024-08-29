@@ -10,29 +10,15 @@ var (
 )
 
 type Offer struct {
-	offerType offerType
-	action    action
-	vendor    vendor
-	product   product
-	count     int
+	vendor  vendor
+	product product
+	count   int
 }
 
 type Offers []Offer
 
-func NewOffer(offerType offerType, action action, vendor string, product product, count int) (Offer, error) {
-	vend, err := newVendor(vendor)
-	if err != nil {
-		return Offer{}, err
-	}
-	off := Offer{offerType, action, vend, product, count}
-	// if err := off.validate(); err != nil {
-	// 	return Offer{}, err
-	// }
-	return off, nil
-}
-
-func NewListingOffer(offerType offerType, action action, productName string) Offer {
-	return Offer{offerType, action, vendor{}, product{name: productName}, 0}
+func NewOffer(vendor string, product product, count int) Offer {
+	return Offer{newVendor(vendor), product, count}
 }
 
 func (o Offer) Product() product {
@@ -41,14 +27,6 @@ func (o Offer) Product() product {
 
 func (o Offer) Vendor() vendor {
 	return o.vendor
-}
-
-func (o Offer) Action() action {
-	return o.action
-}
-
-func (o Offer) Type() offerType {
-	return o.offerType
 }
 
 func (o Offer) Count() int {

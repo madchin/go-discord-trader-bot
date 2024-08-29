@@ -16,56 +16,56 @@ func TestOffersEquality(t *testing.T) {
 	}{
 		{
 			"equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
 			true,
 		},
 		{
 			"not equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.1}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
 			false,
 		},
 		{
 			"equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 2},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
 			true,
 		},
 		{
 			"not equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.1}, 1},
 			false,
 		},
 		{
 			"equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 2},
 			true,
 		},
 		{
 			"not equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
+			Offer{vendor{}, product{"name2", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.0}, 2},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name2", 1.0}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.1}, 2},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name2", 1.1}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{offerType{}, action{}, vendor{}, product{"name2", 1.1}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
+			Offer{vendor{}, product{"name2", 1.1}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 2},
 			false,
 		},
 	}
@@ -87,38 +87,38 @@ func TestOffersMerge(t *testing.T) {
 	}{
 		{
 			"merged",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
 			2,
 		},
 		{
 			"merged",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 3},
+			Offer{vendor{}, product{"name1", 1.1}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 3},
 			4,
 		},
 		{
 			"merged",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 2},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, 2},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
 			3,
 		},
 		{
 			"merged",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.1}, 999},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.1}, 999},
 			1000,
 		},
 		{
 			"merged",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, -1},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, -1},
 			0,
 		},
 		{
 			"merged",
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, 1},
-			Offer{offerType{}, action{}, vendor{}, product{"name1", 1.0}, -2},
+			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{vendor{}, product{"name1", 1.0}, -2},
 			-1,
 		},
 	}
@@ -134,7 +134,8 @@ func TestOffersMerge(t *testing.T) {
 
 func TestNewOffer(t *testing.T) {
 	t.Run("success creation", func(t *testing.T) {
-		offer, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, 2)
+		offer := NewOffer("siema", product{"e", 1.0}, 2)
+		err := offer.validate()
 		if err != nil {
 			t.Fatalf("creation failed %v", err)
 		}
@@ -149,7 +150,8 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("fail when offer count < 0", func(t *testing.T) {
-		_, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, -1)
+		off := NewOffer("siema", product{"e", 1.0}, -1)
+		err := off.validate()
 		if err == nil {
 			t.Fatalf("should fail, but didnt")
 		}
@@ -158,7 +160,8 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("fail when offer count = 0", func(t *testing.T) {
-		_, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, 0)
+		off := NewOffer("siema", product{"e", 1.0}, 0)
+		err := off.validate()
 		if err == nil {
 			t.Fatalf("should fail, but didnt")
 		}
@@ -167,7 +170,8 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("success when offer count > 0", func(t *testing.T) {
-		_, err := NewOffer(offerType{}, action{}, "siema", product{"e", 1.0}, 2)
+		off := NewOffer("siema", product{"e", 1.0}, 2)
+		err := off.validate()
 		if err != nil {
 			t.Fatalf("expected to create offer but error occured: err %v", err)
 		}
@@ -176,7 +180,8 @@ func TestNewOffer(t *testing.T) {
 
 func TestNewVendor(t *testing.T) {
 	t.Run("should fail when name is empty", func(t *testing.T) {
-		_, err := newVendor("")
+		vendor := newVendor("")
+		err := vendor.validate()
 		if err == nil {
 			t.Fatalf("expected to fail")
 		}
@@ -186,7 +191,8 @@ func TestNewVendor(t *testing.T) {
 	})
 
 	t.Run("success when name len = 1", func(t *testing.T) {
-		vendor, err := newVendor("a")
+		vendor := newVendor("a")
+		err := vendor.validate()
 		if err != nil {
 			t.Fatalf("expected to create vendor. actual err: %v", err)
 		}

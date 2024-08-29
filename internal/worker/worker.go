@@ -2,12 +2,13 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
-	"github.com/madchin/trader-bot/internal/domain/offer"
 	"github.com/madchin/trader-bot/internal/gateway"
 	"github.com/madchin/trader-bot/internal/service"
+	"github.com/madchin/trader-bot/internal/storage"
 )
 
 // we assume its concurrent safe
@@ -31,83 +32,48 @@ func spawn(service *service.Service, scheduler scheduler, factoryWorkers *factor
 
 func Spawner(ctx context.Context, service *service.Service, scheduler scheduler, factoryWorkers *factoryWorkers) {
 	for {
-		ctx, _ := context.WithTimeout(ctx, time.Second*5)
 		job, _ := scheduler.Delegate()
 		if job == nil {
 			time.Sleep(time.Millisecond * 100)
 			continue
 		}
+		ctx, ctxCancel := context.WithTimeout(ctx, time.Second*5)
 		worker, err := spawn(service, scheduler, factoryWorkers)
 		if err != nil {
 			log.Printf("worker spawn error: %v", err)
 			time.Sleep(time.Second * 1)
 			continue
 		}
-		go worker.execute(ctx, job)
+		go worker.execute(ctx, ctxCancel, job)
 	}
 }
 
-func (w *worker) execute(ctx context.Context, jobData *gateway.InteractionData) {
-	off := jobData.Offer()
-	log.Printf("executing worker job...")
-	if off.Type() == offer.Buy {
-		ctx = context.WithValue(ctx, "dbTableDescriptor", "buy"+"_"+jobData.Interaction().GuildID)
-		log.Printf("executing buy offer with job data %v", jobData)
-		w.executeBuyOffer(ctx, jobData)
+func (w *worker) execute(ctx context.Context, ctxCancel context.CancelFunc, jobData *gateway.InteractionData) {
+	ctx = context.WithValue(ctx, storage.DbTableDescriptorKey, storage.DbTableDescriptorValue(jobData.Command(), jobData.Interaction().GuildID))
+	log.Printf("executing %s offer with job data %v", ctx.Value(storage.DbTableDescriptorKey), jobData)
+	err := w.exec(ctx, jobData)
+	if err != nil {
+		log.Printf("error in worker with database descriptor %s %v", ctx.Value(storage.DbTableDescriptorKey), err)
 	}
-	if off.Type() == offer.Sell {
-		ctx = context.WithValue(ctx, "dbTableDescriptor", "sell"+"_"+jobData.Interaction().GuildID)
-		log.Printf("executing sell offer with job data %v", jobData)
-		w.executeSellOffer(ctx, jobData)
-	}
+	ctxCancel()
 }
 
-func (w *worker) executeBuyOffer(ctx context.Context, jobData *gateway.InteractionData) {
-	switch jobData.Offer().Action() {
-	case offer.Add:
-		err := w.service.BuyService().Add(ctx, jobData.Interaction(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker buy add: %v", err)
-		}
-	case offer.List:
-		err := w.service.BuyService().List(ctx, jobData.Interaction(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker buy list: %v", err)
-		}
-	case offer.Remove:
-		err := w.service.BuyService().Remove(ctx, jobData.Interaction(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker buy remove: %v", err)
-		}
-	case offer.Update:
-		err := w.service.BuyService().Update(ctx, jobData.Interaction(), jobData.Offer(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker buy update: %v", err)
-		}
+func (w *worker) exec(ctx context.Context, jobData *gateway.InteractionData) error {
+	switch jobData.Subcommand() {
+	case gateway.AddSubCmdDescriptor.Descriptor():
+		return w.service.Offer().Add(ctx, jobData.Interaction(), jobData.Offer())
+	case gateway.ListByProductNameSubCmdDescriptor.Descriptor():
+		return w.service.Offer().ListByProductName(ctx, jobData.Interaction(), jobData.Offer().Product().Name())
+	case gateway.ListByVendorSubCmdDescriptor.Descriptor():
+		return w.service.Offer().ListByProductName(ctx, jobData.Interaction(), jobData.Offer().Vendor().Name())
+	case gateway.RemoveSubCmdDescriptor.Descriptor():
+		return w.service.Offer().Remove(ctx, jobData.Interaction(), jobData.Offer())
+	case gateway.UpdateCountSubCmdDescriptor.Descriptor():
+		log.Printf("update offer in service %v", jobData.UpdateOffer().Count())
+		return w.service.Offer().UpdateCount(ctx, jobData.Interaction(), jobData.Offer(), jobData.UpdateOffer().Count())
+	case gateway.UpdatePriceSubCmdDescriptor.Descriptor():
+		log.Printf("update offer in service %v", jobData.UpdateOffer().Product().Price())
+		return w.service.Offer().UpdatePrice(ctx, jobData.Interaction(), jobData.Offer(), jobData.UpdateOffer().Product().Price())
 	}
-}
-
-func (w *worker) executeSellOffer(ctx context.Context, jobData *gateway.InteractionData) {
-	switch jobData.Offer().Action() {
-	case offer.Add:
-		err := w.service.SellService().Add(ctx, jobData.Interaction(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker sell add: %v", err)
-		}
-	case offer.List:
-		err := w.service.SellService().List(ctx, jobData.Interaction(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker sell list: %v", err)
-		}
-	case offer.Remove:
-		err := w.service.SellService().Remove(ctx, jobData.Interaction(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker sell remove: %v", err)
-		}
-	case offer.Update:
-		err := w.service.SellService().Update(ctx, jobData.Interaction(), jobData.Offer(), jobData.Offer())
-		if err != nil {
-			log.Printf("error in worker sell update: %v", err)
-		}
-	}
+	return errors.New("sub command happened which is not registered")
 }

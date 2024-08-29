@@ -4,6 +4,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+//FIXME list-mine to not accept any param and display all data for requesting user
+//FIXME displaying list data to user
+
 var (
 	itemDescriptor                    = descriptor{"item"}
 	countDescriptor                   = descriptor{"count"}

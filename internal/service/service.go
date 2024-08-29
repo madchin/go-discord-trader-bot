@@ -6,12 +6,7 @@ import (
 )
 
 type Service struct {
-	offer *off
-}
-
-type off struct {
-	buy  *buy
-	sell *sell
+	offer *offerService
 }
 
 type notifier interface {
@@ -20,23 +15,13 @@ type notifier interface {
 
 func New(storage offer.Repository, notifier notifier) *Service {
 	return &Service{
-		offer: &off{
-			buy: &buy{
-				storage:  storage,
-				notifier: notifier,
-			},
-			sell: &sell{
-				storage:  storage,
-				notifier: notifier,
-			},
+		offer: &offerService{
+			storage:  storage,
+			notifier: notifier,
 		},
 	}
 }
 
-func (s *Service) BuyService() *buy {
-	return s.offer.buy
-}
-
-func (s *Service) SellService() *sell {
-	return s.offer.sell
+func (s *Service) Offer() *offerService {
+	return s.offer
 }

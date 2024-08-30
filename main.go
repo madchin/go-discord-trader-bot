@@ -28,11 +28,13 @@ type appEnvs struct {
 }
 
 type envs struct {
-	runtimeEnvironment string
-	appEnvsFilePath    string
-	dbEnvsFilePath     string
-	db                 dbEnvs
-	app                appEnvs
+	runtimeEnvironment    string
+	appEnvsFilePath       string
+	dbNameEnvFilePath     string
+	dbPasswordEnvFilePath string
+	dbUserEnvFilePath     string
+	db                    dbEnvs
+	app                   appEnvs
 }
 
 func main() {
@@ -83,15 +85,31 @@ func requiredEnvs() (envs envs, err error) {
 	if envs.appEnvsFilePath == "" {
 		panic(errors.New("APP_ENV_FILE environment variable not provided. It needs to be set with path to .app.env file"))
 	}
-	envs.dbEnvsFilePath = os.Getenv("DB_ENV_FILE")
-	if envs.dbEnvsFilePath == "" {
-		panic(errors.New("APP_ENV_FILE environment variable not provided. It needs to be set with path to .db.env file"))
+	envs.dbNameEnvFilePath = os.Getenv("DB_NAME_ENV_FILE")
+	if envs.dbNameEnvFilePath == "" {
+		panic(errors.New("DB_NAME_ENV_FILE environment variable not provided. It needs to be set with path to .db.name.env file"))
+	}
+	envs.dbPasswordEnvFilePath = os.Getenv("DB_PASSWORD_ENV_FILE")
+	if envs.dbPasswordEnvFilePath == "" {
+		panic(errors.New("DB_PASSWORD_ENV_FILE environment variable not provided. It needs to be set with path to .db.password.env file"))
+	}
+	envs.dbUserEnvFilePath = os.Getenv("DB_USER_ENV_FILE")
+	if envs.dbPasswordEnvFilePath == "" {
+		panic(errors.New("DB_USER_ENV_FILE environment variable not provided. It needs to be set with path to .db.user.env file"))
 	}
 	if err = godotenv.Load(envs.appEnvsFilePath); err != nil {
 		err = fmt.Errorf("unable to load environments from .app.env file %v", err)
 		return
 	}
-	if err = godotenv.Load(envs.dbEnvsFilePath); err != nil {
+	if err = godotenv.Load(envs.dbNameEnvFilePath); err != nil {
+		err = fmt.Errorf("unable to load environments from .db.env file %v", err)
+		return
+	}
+	if err = godotenv.Load(envs.dbPasswordEnvFilePath); err != nil {
+		err = fmt.Errorf("unable to load environments from .db.env file %v", err)
+		return
+	}
+	if err = godotenv.Load(envs.dbUserEnvFilePath); err != nil {
 		err = fmt.Errorf("unable to load environments from .db.env file %v", err)
 		return
 	}
@@ -115,17 +133,17 @@ func requiredEnvs() (envs envs, err error) {
 	}
 	envs.db.name = os.Getenv("POSTGRES_DB")
 	if envs.db.name == "" {
-		err = errors.New("POSTGRES_DB environment not provided.")
+		err = errors.New("POSTGRES_DB environment not provided")
 		return
 	}
 	envs.db.user = os.Getenv("POSTGRES_USER")
 	if envs.db.user == "" {
-		err = errors.New("POSTGRES_USER environment not provided.")
+		err = errors.New("POSTGRES_USER environment not provided")
 		return
 	}
 	envs.db.password = os.Getenv("POSTGRES_PASSWORD")
 	if envs.db.password == "" {
-		err = errors.New("POSTGRES_PASSWORD environment not provided.")
+		err = errors.New("POSTGRES_PASSWORD environment not provided")
 		return
 	}
 	return

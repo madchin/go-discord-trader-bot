@@ -33,7 +33,7 @@ func spawn(service *service.Service, scheduler scheduler, factoryWorkers *factor
 func Spawner(ctx context.Context, service *service.Service, scheduler scheduler, factoryWorkers *factoryWorkers) {
 	for {
 		job, _ := scheduler.Delegate()
-		if job == nil {
+		if isNoWork(job) {
 			time.Sleep(time.Millisecond * 100)
 			continue
 		}
@@ -50,9 +50,7 @@ func Spawner(ctx context.Context, service *service.Service, scheduler scheduler,
 
 func (w *worker) execute(ctx context.Context, ctxCancel context.CancelFunc, jobData *gateway.InteractionData) {
 	ctx = context.WithValue(ctx, storage.DbTableDescriptorKey, storage.DbTableDescriptorValue(jobData.Command(), jobData.Interaction().GuildID))
-	log.Printf("executing %s offer with job data %v", ctx.Value(storage.DbTableDescriptorKey), jobData)
-	err := w.exec(ctx, jobData)
-	if err != nil {
+	if err := w.exec(ctx, jobData); err != nil {
 		log.Printf("error in worker with database descriptor %s %v", ctx.Value(storage.DbTableDescriptorKey), err)
 	}
 	ctxCancel()
@@ -69,11 +67,13 @@ func (w *worker) exec(ctx context.Context, jobData *gateway.InteractionData) err
 	case gateway.RemoveSubCmdDescriptor.Descriptor():
 		return w.service.Offer().Remove(ctx, jobData.Interaction(), jobData.Offer())
 	case gateway.UpdateCountSubCmdDescriptor.Descriptor():
-		log.Printf("update offer in service %v", jobData.UpdateOffer().Count())
 		return w.service.Offer().UpdateCount(ctx, jobData.Interaction(), jobData.Offer(), jobData.UpdateOffer().Count())
 	case gateway.UpdatePriceSubCmdDescriptor.Descriptor():
-		log.Printf("update offer in service %v", jobData.UpdateOffer().Product().Price())
 		return w.service.Offer().UpdatePrice(ctx, jobData.Interaction(), jobData.Offer(), jobData.UpdateOffer().Product().Price())
 	}
 	return errors.New("sub command happened which is not registered")
+}
+
+func isNoWork(job *gateway.InteractionData) bool {
+	return job == nil
 }

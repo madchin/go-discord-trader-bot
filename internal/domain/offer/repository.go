@@ -5,8 +5,8 @@ import "context"
 type Repository interface {
 	ListOffers(ctx context.Context, productName string) (Offers, error)
 	ListVendorOffers(ctx context.Context, vendorName string) (Offers, error)
-	Add(ctx context.Context, offer Offer) error
 	Remove(ctx context.Context, offer Offer) error
-	UpdateCount(ctx context.Context, oldOffer Offer, count int) error
-	UpdatePrice(ctx context.Context, oldOffer Offer, price float64) error
+	Add(ctx context.Context, offer Offer, onAdd func(Offer) error) error
+	UpdateCount(ctx context.Context, offer Offer, count int, onUpdate func(Offer) error) error
+	UpdatePrice(ctx context.Context, offer Offer, price float64, onUpdate func(Offer) error) error
 }

@@ -17,8 +17,14 @@ func validationError(wrapped error) error {
 }
 
 func (o Offer) validate() error {
-	if o.count <= 0 {
-		return validationError(ErrOfferCountLessOrEqualZero)
+	if err := o.validateCount(); err != nil {
+		return err
+	}
+	if err := o.product.validate(); err != nil {
+		return err
+	}
+	if err := o.vendor.validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -27,8 +33,8 @@ func (p product) validate() error {
 	if p.name == "" {
 		return validationError(ErrProductNameEmpty)
 	}
-	if p.price < 0 {
-		return validationError(ErrProductPriceLessThanZero)
+	if err := p.validatePrice(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -36,6 +42,20 @@ func (p product) validate() error {
 func (v vendor) validate() error {
 	if v.name == "" {
 		return validationError(ErrVendorIsEmpty)
+	}
+	return nil
+}
+
+func (p product) validatePrice() error {
+	if p.price < 0 {
+		return validationError(ErrProductPriceLessThanZero)
+	}
+	return nil
+}
+
+func (o Offer) validateCount() error {
+	if o.count <= 0 {
+		return validationError(ErrOfferCountLessOrEqualZero)
 	}
 	return nil
 }

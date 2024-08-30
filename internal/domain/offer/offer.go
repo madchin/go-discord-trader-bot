@@ -59,3 +59,15 @@ func (o Offers) MergeSameOffers(candidate Offer) Offer {
 	}
 	return candidate
 }
+
+func OnOfferAdd(o Offer) error {
+	return o.validate()
+}
+
+func OnOfferCountUpdate(o Offer) error {
+	return o.validateCount()
+}
+
+func OnOfferPriceUpdate(o Offer) error {
+	return o.product.validatePrice()
+}

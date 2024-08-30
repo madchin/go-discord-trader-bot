@@ -19,7 +19,7 @@ func NewGatewaySession(botToken, appId, guildId string, scheduler scheduler) (*g
 	gateway := &gateway{session}
 	handler := &handler{scheduler}
 	gateway.registerHandlers(handler)
-	if err := gateway.registerAppCommand(appId, guildId, offerCmdBuilder); err != nil {
+	if err := gateway.registerAppCommand(appId, guildId, offerCommand); err != nil {
 		return nil, err
 	}
 	return gateway, nil
@@ -56,7 +56,7 @@ func (g *gateway) registerHandlers(handler *handler) {
 	g.session.AddHandler(handler.onUserInteraction)
 }
 
-func (g *gateway) registerAppCommand(appId, guildId string, cmd appCmdBuilder) error {
+func (g *gateway) registerAppCommand(appId, guildId string, cmd appCmd) error {
 	if _, err := g.session.ApplicationCommandCreate(appId, guildId, cmd(appId, guildId)); err != nil {
 		return err
 	}

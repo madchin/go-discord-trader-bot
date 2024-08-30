@@ -8,25 +8,40 @@ import (
 //FIXME displaying list data to user
 
 var (
-	itemDescriptor                    = descriptor{"item"}
-	countDescriptor                   = descriptor{"count"}
-	priceDescriptor                   = descriptor{"price"}
-	updateCountDescriptor             = descriptor{"count-update"}
-	updatePriceDescriptor             = descriptor{"price-update"}
-	BuyCmdDescriptor                  = descriptor{"buy"}
-	SellCmdDescriptor                 = descriptor{"sell"}
-	AddSubCmdDescriptor               = descriptor{"add"}
-	RemoveSubCmdDescriptor            = descriptor{"remove"}
-	UpdateCountSubCmdDescriptor       = descriptor{"update-count"}
-	UpdatePriceSubCmdDescriptor       = descriptor{"update-price"}
-	ListByProductNameSubCmdDescriptor = descriptor{"list-for-name"}
-	ListByVendorSubCmdDescriptor      = descriptor{"list-mine"}
+	itemDescriptor        = option{descriptor{"item"}}
+	countDescriptor       = option{descriptor{"count"}}
+	priceDescriptor       = option{descriptor{"price"}}
+	updateCountDescriptor = option{descriptor{"count-update"}}
+	updatePriceDescriptor = option{descriptor{"price-update"}}
+
+	BuyCmdDescriptor  = command{descriptor{"buy"}}
+	SellCmdDescriptor = command{descriptor{"sell"}}
+
+	AddSubCmdDescriptor               = subCommand{descriptor{"add"}}
+	RemoveSubCmdDescriptor            = subCommand{descriptor{"remove"}}
+	UpdateCountSubCmdDescriptor       = subCommand{descriptor{"update-count"}}
+	UpdatePriceSubCmdDescriptor       = subCommand{descriptor{"update-price"}}
+	ListByProductNameSubCmdDescriptor = subCommand{descriptor{"list-for-name"}}
+	ListByVendorSubCmdDescriptor      = subCommand{descriptor{"list-mine"}}
 )
 
-type appCmdBuilder func(appId, guildId string) *discordgo.ApplicationCommand
+type appCmd func(appId, guildId string) *discordgo.ApplicationCommand
 
+// each descriptor must have unique name in order to be correctly parsed in interaction data retriever
 type descriptor struct {
 	name string
+}
+
+type option struct {
+	descriptor
+}
+
+type subCommand struct {
+	descriptor
+}
+
+type command struct {
+	descriptor
 }
 
 func (d descriptor) Descriptor() string {
@@ -36,7 +51,7 @@ func (d descriptor) Descriptor() string {
 /*
 if guildId is empty, cmd is considered as global command instead of guild one
 */
-var offerCmdBuilder appCmdBuilder = func(appId, guildId string) *discordgo.ApplicationCommand {
+var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationCommand {
 	var (
 		minCount float64 = 1
 		minPrice float64 = 0
@@ -124,7 +139,7 @@ var offerCmdBuilder appCmdBuilder = func(appId, guildId string) *discordgo.Appli
 		},
 	}
 
-	var listOffersOptions = []*discordgo.ApplicationCommandOption{
+	var listByNameOffers = []*discordgo.ApplicationCommandOption{
 		{
 			Type:        discordgo.ApplicationCommandOptionString,
 			Name:        itemDescriptor.name,
@@ -137,48 +152,47 @@ var offerCmdBuilder appCmdBuilder = func(appId, guildId string) *discordgo.Appli
 		ApplicationID: appId,
 		GuildID:       guildId,
 		Name:          "offer",
-		Description:   "Add, Remove, Update, Retrieve specified one or all Sell / Buy offers",
+		Description:   "Manage sell / buy offers with subcommands as add, update, retrieve, remove. ",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
 				Name:        SellCmdDescriptor.name,
-				Description: "add a sell offer, update or remove existing one, retrieve specified one or all existing",
+				Description: "Add, update, retrieve or remove sell offers",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        AddSubCmdDescriptor.name,
-						Description: "Add a sell offer. Example: /offer sell add itemName, priceForEach, count",
+						Description: "Add a sell offer. If offer exists (product and price is the same), its count will be updated.",
 						Options:     addOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        UpdateCountSubCmdDescriptor.name,
-						Description: "Update sell offer product count. Example: /offer sell update itemName, priceForEach, count",
+						Description: "Update sell offer product count.",
 						Options:     updateCountOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        UpdatePriceSubCmdDescriptor.name,
-						Description: "Update sell offer product price. Example: /offer sell update itemName, priceForEach, count",
+						Description: "Update sell offer product price.",
 						Options:     updatePriceOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        RemoveSubCmdDescriptor.name,
-						Description: "Remove a sell offer Example: /offer sell remove itemName, priceForEach, count",
+						Description: "Remove a sell offer completely.",
 						Options:     removeOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        ListByProductNameSubCmdDescriptor.name,
-						Description: "Retrieve specified or all sell offers Example: /offer list itemName",
-						Options:     listOffersOptions,
+						Description: "Retrieve specified by name offer.",
+						Options:     listByNameOffers,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        ListByVendorSubCmdDescriptor.name,
-						Description: "Retrieve specified or all your sell offers Example: /offer list itemName",
-						Options:     listOffersOptions,
+						Description: "List all your offers.",
 					},
 				},
 			},
@@ -190,38 +204,37 @@ var offerCmdBuilder appCmdBuilder = func(appId, guildId string) *discordgo.Appli
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        AddSubCmdDescriptor.name,
-						Description: "Add a buy offer. Example: /offer buy add itemName, priceForEach, count",
+						Description: "Add a buy offer. If offer exists (product and price is the same), its count will be updated",
 						Options:     addOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        UpdateCountSubCmdDescriptor.name,
-						Description: "Update buy offer product count. Example: /offer sell update itemName, priceForEach, count",
+						Description: "Update buy offer product count.",
 						Options:     updateCountOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        UpdatePriceSubCmdDescriptor.name,
-						Description: "Update buy offer product price. Example: /offer sell update itemName, priceForEach, count",
+						Description: "Update buy offer product price.",
 						Options:     updatePriceOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        RemoveSubCmdDescriptor.name,
-						Description: "Remove a buy offer Example: /offer buy remove itemName, priceForEach, count",
+						Description: "Remove buy offer completely.",
 						Options:     removeOptions,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        ListByProductNameSubCmdDescriptor.name,
-						Description: "Retrieve specified or all buy offers Example: /offer list itemName",
-						Options:     listOffersOptions,
+						Description: "Retrieve specified by name buy offers.",
+						Options:     listByNameOffers,
 					},
 					{
 						Type:        discordgo.ApplicationCommandOptionSubCommand,
 						Name:        ListByVendorSubCmdDescriptor.name,
-						Description: "Retrieve specified or all your buy offers Example: /offer list itemName",
-						Options:     listOffersOptions,
+						Description: "List all your offers.",
 					},
 				},
 			},

@@ -2,32 +2,29 @@ services:
   trader:
     build: .
     secrets:
-      - db_name_env
-      - db_password_env
-      - db_user_env
+      - db_name
+      - db_password
+      - db_user
       - app_env
     environment:
       APP_ENV_FILE: /run/secrets/app_env
-      DB_NAME_ENV_FILE: /run/secrets/db_name_env
-      DB_PASSWORD_ENV_FILE: /run/secrets/db_password_env
-      DB_USER_ENV_FILE: /run/secrets/db_user_env
+      DB_NAME_FILE: /run/secrets/db_name
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_USER_FILE: /run/secrets/db_user
       RUNTIME_ENVIRONMENT: DEV
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   db:
     image: postgres:16.4
     secrets:
-      - db_password_env
-      - db_name_env
-      - db_user_env
+      - db_password
+      - db_name
+      - db_user
     environment:
-      # https://stackoverflow.com/questions/78933139/docker-secrets-do-not-work-with-postgres-container
-      POSTGRES_USER_FILE: /run/secrets/db_user_env
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password_env
-      POSTGRES_DB_FILE: /run/secrets/db_name_env
-      #POSTGRES_USER: sie
-      #POSTGRES_PASSWORD: elo
-      #POSTGRES_DB: off
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB_FILE: /run/secrets/db_name
     expose:
       - "5432"
     healthcheck:
@@ -40,11 +37,11 @@ services:
 secrets:
   app_env:
     file: ./.app.env
-  db_password_env:
-    file: ./.db.password.env
-  db_name_env:
-    file: ./.db.name.env
-  db_user_env: 
-    file: ./.db.user.env
+  db_password:
+    file: ./.db.password
+  db_name:
+    file: ./.db.name
+  db_user: 
+    file: ./.db.user
 volumes:
   db-data:

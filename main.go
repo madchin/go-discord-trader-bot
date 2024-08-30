@@ -15,12 +15,6 @@ import (
 	"github.com/madchin/trader-bot/internal/worker"
 )
 
-type dbEnvs struct {
-	name     string
-	user     string
-	password string
-}
-
 type appEnvs struct {
 	botToken string
 	appId    string
@@ -28,13 +22,8 @@ type appEnvs struct {
 }
 
 type envs struct {
-	runtimeEnvironment    string
-	appEnvsFilePath       string
-	dbNameEnvFilePath     string
-	dbPasswordEnvFilePath string
-	dbUserEnvFilePath     string
-	db                    dbEnvs
-	app                   appEnvs
+	runtimeEnvironment string
+	app                appEnvs
 }
 
 func main() {
@@ -44,7 +33,11 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	conn, err := storage.Connect(envs.db.user, envs.db.password, envs.db.name)
+	dbCreds, err := storage.LoadCredentials()
+	if err != nil {
+		panic(err)
+	}
+	conn, err := storage.Connect(dbCreds)
 	if err != nil {
 		panic(err)
 	}
@@ -81,36 +74,12 @@ Needed ENV variables for project to run:
   - RUNTIME_ENVIRONMENT (settled dynamically in docker compose up command [check it in Makefile]) -- determines runtime environment
 */
 func requiredEnvs() (envs envs, err error) {
-	envs.appEnvsFilePath = os.Getenv("APP_ENV_FILE")
-	if envs.appEnvsFilePath == "" {
+	appEnvsFilePath := os.Getenv("APP_ENV_FILE")
+	if appEnvsFilePath == "" {
 		panic(errors.New("APP_ENV_FILE environment variable not provided. It needs to be set with path to .app.env file"))
 	}
-	envs.dbNameEnvFilePath = os.Getenv("DB_NAME_ENV_FILE")
-	if envs.dbNameEnvFilePath == "" {
-		panic(errors.New("DB_NAME_ENV_FILE environment variable not provided. It needs to be set with path to .db.name.env file"))
-	}
-	envs.dbPasswordEnvFilePath = os.Getenv("DB_PASSWORD_ENV_FILE")
-	if envs.dbPasswordEnvFilePath == "" {
-		panic(errors.New("DB_PASSWORD_ENV_FILE environment variable not provided. It needs to be set with path to .db.password.env file"))
-	}
-	envs.dbUserEnvFilePath = os.Getenv("DB_USER_ENV_FILE")
-	if envs.dbPasswordEnvFilePath == "" {
-		panic(errors.New("DB_USER_ENV_FILE environment variable not provided. It needs to be set with path to .db.user.env file"))
-	}
-	if err = godotenv.Load(envs.appEnvsFilePath); err != nil {
+	if err = godotenv.Load(appEnvsFilePath); err != nil {
 		err = fmt.Errorf("unable to load environments from .app.env file %v", err)
-		return
-	}
-	if err = godotenv.Load(envs.dbNameEnvFilePath); err != nil {
-		err = fmt.Errorf("unable to load environments from .db.env file %v", err)
-		return
-	}
-	if err = godotenv.Load(envs.dbPasswordEnvFilePath); err != nil {
-		err = fmt.Errorf("unable to load environments from .db.env file %v", err)
-		return
-	}
-	if err = godotenv.Load(envs.dbUserEnvFilePath); err != nil {
-		err = fmt.Errorf("unable to load environments from .db.env file %v", err)
 		return
 	}
 	envs.app.botToken = os.Getenv("BOT_TOKEN")
@@ -130,21 +99,6 @@ func requiredEnvs() (envs envs, err error) {
 			err = errors.New("GUILD_ID environment not provided. Its required in DEV run-time environment")
 			return
 		}
-	}
-	envs.db.name = os.Getenv("POSTGRES_DB")
-	if envs.db.name == "" {
-		err = errors.New("POSTGRES_DB environment not provided")
-		return
-	}
-	envs.db.user = os.Getenv("POSTGRES_USER")
-	if envs.db.user == "" {
-		err = errors.New("POSTGRES_USER environment not provided")
-		return
-	}
-	envs.db.password = os.Getenv("POSTGRES_PASSWORD")
-	if envs.db.password == "" {
-		err = errors.New("POSTGRES_PASSWORD environment not provided")
-		return
 	}
 	return
 }

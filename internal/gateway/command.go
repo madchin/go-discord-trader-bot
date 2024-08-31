@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"github.com/bwmarrin/discordgo"
+	"github.com/madchin/trader-bot/internal/domain/offer"
 )
 
 //FIXME list-mine to not accept any param and display all data for requesting user
@@ -14,8 +15,8 @@ var (
 	updateCountDescriptor = option{descriptor{"count-update"}}
 	updatePriceDescriptor = option{descriptor{"price-update"}}
 
-	BuyCmdDescriptor  = command{descriptor{"buy"}}
-	SellCmdDescriptor = command{descriptor{"sell"}}
+	buyCmdDescriptor  = command{descriptor{"buy"}}
+	sellCmdDescriptor = command{descriptor{"sell"}}
 
 	AddSubCmdDescriptor               = subCommand{descriptor{"add"}}
 	RemoveSubCmdDescriptor            = subCommand{descriptor{"remove"}}
@@ -53,8 +54,7 @@ if guildId is empty, cmd is considered as global command instead of guild one
 */
 var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationCommand {
 	var (
-		minCount float64 = 1
-		minPrice float64 = 0
+		minCount float64 = float64(offer.MinCount)
 	)
 
 	var addOptions = []*discordgo.ApplicationCommandOption{
@@ -74,7 +74,8 @@ var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationComm
 			Type:        discordgo.ApplicationCommandOptionNumber,
 			Name:        priceDescriptor.name,
 			Description: "price per each item",
-			MinValue:    &minPrice,
+			MinValue:    &offer.MinPrice,
+			MaxValue:    offer.MaxPrice,
 		},
 	}
 
@@ -89,14 +90,16 @@ var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationComm
 			Type:        discordgo.ApplicationCommandOptionNumber,
 			Name:        priceDescriptor.name,
 			Description: "price per each item",
-			MinValue:    &minPrice,
+			MinValue:    &offer.MinPrice,
+			MaxValue:    offer.MaxPrice,
 			Required:    true,
 		},
 		{
 			Type:        discordgo.ApplicationCommandOptionNumber,
 			Name:        updatePriceDescriptor.name,
 			Description: "update price",
-			MinValue:    &minPrice,
+			MinValue:    &offer.MinPrice,
+			MaxValue:    offer.MaxPrice,
 			Required:    true,
 		},
 	}
@@ -112,7 +115,8 @@ var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationComm
 			Type:        discordgo.ApplicationCommandOptionNumber,
 			Name:        priceDescriptor.name,
 			Description: "price per each item",
-			MinValue:    &minPrice,
+			MinValue:    &offer.MinPrice,
+			MaxValue:    offer.MaxPrice,
 			Required:    true,
 		},
 		{
@@ -135,7 +139,8 @@ var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationComm
 			Type:        discordgo.ApplicationCommandOptionNumber,
 			Name:        priceDescriptor.name,
 			Description: "price per each item",
-			MinValue:    &minPrice,
+			MinValue:    &offer.MinPrice,
+			MaxValue:    offer.MaxPrice,
 		},
 	}
 
@@ -156,7 +161,7 @@ var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationComm
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
-				Name:        SellCmdDescriptor.name,
+				Name:        sellCmdDescriptor.name,
 				Description: "Add, update, retrieve or remove sell offers",
 				Options: []*discordgo.ApplicationCommandOption{
 					{
@@ -198,7 +203,7 @@ var offerCommand appCmd = func(appId, guildId string) *discordgo.ApplicationComm
 			},
 			{
 				Type:        discordgo.ApplicationCommandOptionSubCommandGroup,
-				Name:        BuyCmdDescriptor.name,
+				Name:        buyCmdDescriptor.name,
 				Description: "add a buy offer, update or remove existing one, retrieve specified one or all existing",
 				Options: []*discordgo.ApplicationCommandOption{
 					{

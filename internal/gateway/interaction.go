@@ -48,12 +48,13 @@ func (i *InteractionData) Subcommand() string {
 
 func (e eventData) mapToOffer() offer.Offer {
 	product := offer.NewProduct(e.itemName, e.itemPrice)
-	return offer.NewOffer(e.authorId, product, e.itemCount)
+
+	return offer.NewOffer(offer.NewVendorIdentity(e.authorId), product, e.itemCount)
 }
 
 func (e eventData) mapToUpdateOffer() offer.Offer {
 	product := offer.NewProduct(e.itemName, e.updateItemPrice)
-	return offer.NewOffer(e.authorId, product, e.updateItemCount)
+	return offer.NewOffer(offer.NewVendorIdentity(e.authorId), product, e.updateItemCount)
 }
 
 func immediateInteractionRespond(s *discordgo.Session, interaction *discordgo.Interaction, responseContent string) error {
@@ -94,9 +95,9 @@ func getInteractionDataRecursive(appCmdData []*discordgo.ApplicationCommandInter
 			fmt.Printf("app cmd data is %v", *d)
 		}
 		switch d.Name {
-		case BuyCmdDescriptor.name:
+		case buyCmdDescriptor.name:
 			fallthrough
-		case SellCmdDescriptor.name:
+		case sellCmdDescriptor.name:
 			data.command = d.Name
 		case AddSubCmdDescriptor.name:
 			fallthrough

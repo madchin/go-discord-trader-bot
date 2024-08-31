@@ -1,10 +1,10 @@
 #!/bin/bash
 
-echo dbname > .db.name
+echo -n dbname > .db.name
 
-echo user > .db.user
+echo -n user > .db.user
 
-echo pswd > .db.password 
+echo -n pswd > .db.password 
 
 touch .app.env
 

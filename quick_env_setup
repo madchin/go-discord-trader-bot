@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo dbname > .db.name
+
+echo user > .db.user
+
+echo pswd > .db.password 
+
+touch .app.env
+
+tee .app.env << EOF
+APPLICATION_ID=
+PUBLIC_KEY=
+GUILD_ID=
+BOT_TOKEN= 
+EOF

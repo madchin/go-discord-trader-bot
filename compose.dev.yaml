@@ -1,6 +1,13 @@
 services:
   trader:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./
+          target: /app
     secrets:
       - db_name
       - db_password

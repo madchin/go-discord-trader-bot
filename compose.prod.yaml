@@ -1,6 +1,8 @@
 services:
   trader:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
     secrets:
       - db_name
       - db_password

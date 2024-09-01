@@ -1,0 +1,22 @@
+FROM golang:1.23.0-bookworm
+
+ARG USER=user
+
+RUN adduser --disabled-password $USER \
+        && mkdir -p /etc/sudoers.d \
+        && echo "$USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/$USER \
+        && chmod 0440 /etc/sudoers.d/$USER
+
+USER $USER
+
+WORKDIR /app
+
+COPY go.mod go.sum ./
+
+RUN go mod download 
+
+COPY --chown=$USER:$USER . ./
+
+RUN go mod tidy
+
+CMD go run main.go

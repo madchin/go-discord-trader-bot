@@ -12,23 +12,23 @@ var ErrNoJobToSchedule = errors.New("no job to schedule")
 
 type scheduler struct {
 	mu *sync.Mutex
-	q  *queue[*gateway.InteractionData]
+	q  *queue[gateway.Job]
 }
 
 // we ensure we only have one scheduler
 var Scheduler = &scheduler{
 	&sync.Mutex{},
-	&queue[*gateway.InteractionData]{},
+	&queue[gateway.Job]{},
 }
 
-func (t *scheduler) Schedule(jobInfo *gateway.InteractionData) {
+func (t *scheduler) Schedule(jobInfo gateway.Job) {
 	t.mu.Lock()
 	log.Printf("scheduling job %v", jobInfo)
 	t.q.enqueue(jobInfo)
 	t.mu.Unlock()
 }
 
-func (t *scheduler) Delegate() (*gateway.InteractionData, error) {
+func (t *scheduler) Delegate() (gateway.Job, error) {
 	t.mu.Lock()
 	data, err := t.q.dequeue()
 	t.mu.Unlock()

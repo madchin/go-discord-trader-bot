@@ -1,14 +1,11 @@
 package gateway
 
 import (
-	"fmt"
-
 	"github.com/bwmarrin/discordgo"
 	"github.com/madchin/trader-bot/internal/domain/offer"
 )
 
 type eventData struct {
-	authorId        string
 	command         string
 	subCommand      string
 	itemName        string
@@ -24,6 +21,14 @@ type InteractionData struct {
 	subCommand  string
 	offer       offer.Offer
 	updateOffer offer.Offer
+}
+
+type Job interface {
+	Command() string
+	Subcommand() string
+	Interaction() *discordgo.Interaction
+	Offer() offer.Offer
+	UpdateOffer() offer.Offer
 }
 
 func (i *InteractionData) Offer() offer.Offer {
@@ -46,23 +51,21 @@ func (i *InteractionData) Subcommand() string {
 	return i.subCommand
 }
 
-func (e eventData) mapToOffer() offer.Offer {
+func (e eventData) mapToOffer(vendorIdentity offer.VendorIdentity) offer.Offer {
 	product := offer.NewProduct(e.itemName, e.itemPrice)
-
-	return offer.NewOffer(offer.NewVendorIdentity(e.authorId), product, e.itemCount)
+	return offer.NewOffer(vendorIdentity, product, e.itemCount)
 }
 
-func (e eventData) mapToUpdateOffer() offer.Offer {
+func (e eventData) mapToUpdateOffer(vendorIdentity offer.VendorIdentity) offer.Offer {
 	product := offer.NewProduct(e.itemName, e.updateItemPrice)
-	return offer.NewOffer(offer.NewVendorIdentity(e.authorId), product, e.updateItemCount)
+	return offer.NewOffer(vendorIdentity, product, e.updateItemCount)
 }
 
 func immediateInteractionRespond(s *discordgo.Session, interaction *discordgo.Interaction, responseContent string) error {
 	immediateResponse := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{
-			Content:         responseContent,
-			AllowedMentions: &discordgo.MessageAllowedMentions{RepliedUser: true},
+			Content: responseContent,
 		},
 	}
 	return s.InteractionRespond(interaction, immediateResponse)
@@ -77,23 +80,25 @@ func deferredInteractionRespond(s *discordgo.Session, interaction *discordgo.Int
 
 func getInteractionEventData(interactionEvent *discordgo.InteractionCreate) (*InteractionData, error) {
 	cmdData := interactionEvent.ApplicationCommandData()
-	eventData := &eventData{authorId: interactionEvent.Member.User.ID}
+	eventData := &eventData{}
 	getInteractionDataRecursive(cmdData.Options, eventData)
-	fmt.Printf(":event data is %v", cmdData)
-	off := eventData.mapToOffer()
-	updateOff := eventData.mapToUpdateOffer()
-	return &InteractionData{interactionEvent.Interaction, eventData.command, eventData.subCommand, off, updateOff}, nil
+	vendorIdentity := offer.NewVendorIdentity(interactionEvent.Member.User.ID)
+	off := eventData.mapToOffer(vendorIdentity)
+	updateOff := eventData.mapToUpdateOffer(vendorIdentity)
+	return &InteractionData{
+		interactionEvent.Interaction,
+		eventData.command,
+		eventData.subCommand,
+		off,
+		updateOff,
+	}, nil
 }
 
 func getInteractionDataRecursive(appCmdData []*discordgo.ApplicationCommandInteractionDataOption, data *eventData) {
 	if appCmdData == nil {
 		return
 	}
-
 	for _, d := range appCmdData {
-		if d != nil {
-			fmt.Printf("app cmd data is %v", *d)
-		}
 		switch d.Name {
 		case buyCmdDescriptor.name:
 			fallthrough

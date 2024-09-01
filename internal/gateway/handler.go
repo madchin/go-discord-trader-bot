@@ -7,7 +7,7 @@ import (
 )
 
 type scheduler interface {
-	Schedule(data *InteractionData)
+	Schedule(data Job)
 }
 
 type handler struct {

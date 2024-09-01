@@ -19,54 +19,74 @@ func NewOffer(db *pgx.Conn) *offerStorage {
 func (offerStorage *offerStorage) Add(ctx context.Context, offer offer.Offer, onAdd offer.OnOfferAddFunc) error {
 	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
-		return err
+		return fmt.Errorf("storage offer add: %w", err)
 	}
-	return offerStorage.add(ctx, tableName, offer, onAdd)
+	if err := offerStorage.add(ctx, tableName, offer, onAdd); err != nil {
+		return fmt.Errorf("storage offer add: %w", err)
+	}
+	return nil
 }
 
 func (offerStorage *offerStorage) Remove(ctx context.Context, offer offer.Offer) error {
 	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
-		return err
+		return fmt.Errorf("storage offer remove: %w", err)
 	}
-	return offerStorage.remove(ctx, tableName, offer)
+	if err := offerStorage.remove(ctx, tableName, offer); err != nil {
+		return fmt.Errorf("storage offer remove: %w", err)
+	}
+	return nil
 }
 
 func (offerStorage *offerStorage) UpdatePrice(ctx context.Context, offer offer.Offer, price float64, onUpdatePrice offer.OnOfferUpdatePriceFunc) error {
 	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
-		return err
+		return fmt.Errorf("storage offer update price: %w", err)
 	}
-	return offerStorage.updatePrice(ctx, tableName, offer, price, onUpdatePrice)
+	if err := offerStorage.updatePrice(ctx, tableName, offer, price, onUpdatePrice); err != nil {
+		return fmt.Errorf("storage offer update price: %w", err)
+	}
+	return nil
 }
 
 func (offerStorage *offerStorage) UpdateCount(ctx context.Context, offer offer.Offer, count int, onUpdateCount offer.OnOfferUpdateCountFunc) error {
 	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
-		return err
+		return fmt.Errorf("storage offer update count: %w", err)
 	}
-	return offerStorage.updateCount(ctx, tableName, offer, count, onUpdateCount)
+	if err := offerStorage.updateCount(ctx, tableName, offer, count, onUpdateCount); err != nil {
+		return fmt.Errorf("storage offer update count: %w", err)
+	}
+	return nil
 }
 
 func (offerStorage *offerStorage) ListOffers(ctx context.Context, productName string) (offer.Offers, error) {
 	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
-		return offer.Offers{}, err
+		return offer.Offers{}, fmt.Errorf("storage offer list offers: %w", err)
 	}
-	return offerStorage.listOffers(ctx, tableName, productName)
+	offers, err := offerStorage.listOffers(ctx, tableName, productName)
+	if err != nil {
+		return offer.Offers{}, fmt.Errorf("storage offer list offers: %w", err)
+	}
+	return offers, nil
 }
 
 func (offerStorage *offerStorage) ListVendorOffers(ctx context.Context, vendorIdentity offer.VendorIdentity) (offer.Offers, error) {
 	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
-		return offer.Offers{}, err
+		return offer.Offers{}, fmt.Errorf("storage offer list vendor offers: %w", err)
 	}
-	return offerStorage.listVendorOffers(ctx, tableName, vendorIdentity)
+	offers, err := offerStorage.listVendorOffers(ctx, tableName, vendorIdentity)
+	if err != nil {
+		return offer.Offers{}, fmt.Errorf("storage offer list vendor offers: %w", err)
+	}
+	return offers, nil
 }
 
 func (offerStorage *offerStorage) add(ctx context.Context, dbTable string, offer offer.Offer, onAdd offer.OnOfferAddFunc) error {
 	if err := onAdd(offer); err != nil {
-		return err
+		return fmt.Errorf("validation: %w", err)
 	}
 	query := fmt.Sprintf("INSERT INTO %s (vendorId,price,productName,count) VALUES ($1,$2,$3,$4)", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
@@ -76,7 +96,7 @@ func (offerStorage *offerStorage) add(ctx context.Context, dbTable string, offer
 		offer.Count(),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("query execution: %w", err)
 	}
 	return nil
 }
@@ -89,14 +109,14 @@ func (offerStorage *offerStorage) remove(ctx context.Context, dbTable string, of
 		offer.Product().Name(),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("query execution: %w", err)
 	}
 	return nil
 }
 
 func (offerStorage *offerStorage) updateCount(ctx context.Context, dbTable string, offer offer.Offer, count int, onUpdateCount offer.OnOfferUpdateCountFunc) error {
 	if err := onUpdateCount(count, offer.VendorIdentity()); err != nil {
-		return err
+		return fmt.Errorf("validation: %w", err)
 	}
 	query := fmt.Sprintf("UPDATE %s SET count=$1 WHERE vendorId=$2 AND productName=$3 AND price=$4", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
@@ -106,14 +126,14 @@ func (offerStorage *offerStorage) updateCount(ctx context.Context, dbTable strin
 		offer.Product().Price(),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("query execution: %w", err)
 	}
 	return nil
 }
 
 func (offerStorage *offerStorage) updatePrice(ctx context.Context, dbTable string, offer offer.Offer, price float64, onUpdatePrice offer.OnOfferUpdatePriceFunc) error {
 	if err := onUpdatePrice(price, offer.VendorIdentity()); err != nil {
-		return err
+		return fmt.Errorf("validation: %w", err)
 	}
 	query := fmt.Sprintf("UPDATE %s SET price=$1 WHERE vendorId=$2 AND productName=$3 AND price=$4", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
@@ -123,7 +143,7 @@ func (offerStorage *offerStorage) updatePrice(ctx context.Context, dbTable strin
 		offer.Product().Price(),
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("query execution: %w", err)
 	}
 	return nil
 }
@@ -132,7 +152,7 @@ func (offerStorage *offerStorage) listOffers(ctx context.Context, dbTable string
 	query := fmt.Sprintf("SELECT * FROM %s WHERE productName=$1 ORDER BY price", dbTable)
 	rows, err := offerStorage.db.Query(ctx, query, productName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query preparing: %w", err)
 	}
 	defer rows.Close()
 	offerModels, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (offerModel, error) {
@@ -144,7 +164,7 @@ func (offerStorage *offerStorage) listOffers(ctx context.Context, dbTable string
 		return offModel, nil
 	})
 	if err != nil {
-		return offer.Offers{}, fmt.Errorf("collecting rows %w", err)
+		return offer.Offers{}, fmt.Errorf("collecting rows: %w", err)
 	}
 	return mapStorageOffersToDomainOffers(offerModels), nil
 }
@@ -153,7 +173,7 @@ func (offerStorage *offerStorage) listVendorOffers(ctx context.Context, dbTable 
 	query := fmt.Sprintf("SELECT * FROM %s WHERE vendorId=$1 ORDER BY price", dbTable)
 	rows, err := offerStorage.db.Query(ctx, query, vendorIdentity.RawValue())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query preparing: %w", err)
 	}
 	defer rows.Close()
 	offerModels, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (offerModel, error) {
@@ -165,7 +185,7 @@ func (offerStorage *offerStorage) listVendorOffers(ctx context.Context, dbTable 
 		return offModel, nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("list vendor offers collecting rows: %w", err)
+		return nil, fmt.Errorf("collecting rows: %w", err)
 	}
 
 	return mapStorageOffersToDomainOffers(offerModels), nil
@@ -180,7 +200,7 @@ func (offerStorage *offerStorage) createTable(ctx context.Context, name string) 
 	count INTEGER NOT NULL)`, name,
 	)
 	if _, err := offerStorage.db.Exec(ctx, query); err != nil {
-		return fmt.Errorf("error occured during creating table with name %s err: %v", name, err)
+		return fmt.Errorf("creating table with name %s: %w", name, err)
 	}
 	return nil
 }

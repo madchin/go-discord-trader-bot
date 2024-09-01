@@ -2,6 +2,8 @@ package offer
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 )
 
 var (
@@ -10,27 +12,27 @@ var (
 )
 
 type Offer struct {
-	vendor  vendor
-	product product
-	count   int
+	vendorIdentity VendorIdentity
+	product        product
+	count          int
 }
 
 type Offers []Offer
 
-func NewOffer(vendor string, product product, count int) Offer {
-	return Offer{newVendor(vendor), product, count}
+func NewOffer(vendorIdentity VendorIdentity, product product, count int) Offer {
+	return Offer{vendorIdentity, product, count}
 }
 
 func (o Offer) Product() product {
 	return o.product
 }
 
-func (o Offer) Vendor() vendor {
-	return o.vendor
-}
-
 func (o Offer) Count() int {
 	return o.count
+}
+
+func (o Offer) VendorIdentity() VendorIdentity {
+	return o.vendorIdentity
 }
 
 func (o Offer) isSameOffer(off Offer) bool {
@@ -60,14 +62,55 @@ func (o Offers) MergeSameOffers(candidate Offer) Offer {
 	return candidate
 }
 
+func (o Offers) NotExists() bool {
+	return len(o) == 0
+}
+
+func (o Offers) ToReadableMessage() string {
+	offers := make([]string, len(o))
+	for i := 0; i < len(o); i++ {
+		price := fmt.Sprintf("%.2f", o[i].product.price)
+		offers[i] = fmt.Sprintf("Product: %s, Each Price: %s, Count: %d, Vendor: %s", o[i].product.name, price, o[i].count, "<@!"+o[i].vendorIdentity.id+">")
+	}
+	return strings.Join(offers, ",\n")
+}
+
+func (o Offers) VendorIdentities() VendorIdentities {
+	vendorIdentities := make(VendorIdentities, len(o))
+	for i := 0; i < len(o); i++ {
+		vendorIdentities[i] = o[i].vendorIdentity
+	}
+	return vendorIdentities
+}
+
 func OnOfferAdd(o Offer) error {
-	return o.validate()
+	if err := o.validate(); err != nil {
+		return err
+	}
+	if err := o.vendorIdentity.validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func OnOfferCountUpdate(o Offer) error {
-	return o.validateCount()
+func OnOfferCountUpdate(count int, v VendorIdentity) error {
+	tmpOffer := Offer{count: count}
+	if err := tmpOffer.validateCount(); err != nil {
+		return err
+	}
+	if err := v.validate(); err != nil {
+		return err
+	}
+	return nil
 }
 
-func OnOfferPriceUpdate(o Offer) error {
-	return o.product.validatePrice()
+func OnOfferPriceUpdate(price float64, v VendorIdentity) error {
+	tmpProd := product{price: price}
+	if err := tmpProd.validatePrice(); err != nil {
+		return err
+	}
+	if err := v.validate(); err != nil {
+		return err
+	}
+	return nil
 }

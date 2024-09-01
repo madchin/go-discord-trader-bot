@@ -9,9 +9,9 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var DbTableDescriptorKey = dbtableDescriptorKey{}
+var CtxBuySellDbTableDescriptorKey = ctxBuySellDbTableDescriptorKey{}
 
-type dbtableDescriptorKey struct{}
+type ctxBuySellDbTableDescriptorKey struct{}
 
 type dbCreds struct {
 	databaseName string
@@ -28,7 +28,7 @@ func Connect(dbCreds dbCreds) (*pgx.Conn, error) {
 	return conn, nil
 }
 
-func DbTableDescriptorValue(name, guildId string) string {
+func TableWithGuildIdSuffix(name, guildId string) string {
 	return name + "_" + guildId
 }
 

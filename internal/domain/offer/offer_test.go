@@ -6,7 +6,7 @@ import (
 )
 
 // FIXME
-// fix all tests -- added new type offerType / vendor
+// fix all tests -- added new type offerType / VendorIdentityIdentity
 func TestOffersEquality(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -16,56 +16,56 @@ func TestOffersEquality(t *testing.T) {
 	}{
 		{
 			"equal",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
 			true,
 		},
 		{
 			"not equal",
-			Offer{vendor{}, product{"name1", 1.1}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.1}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
 			false,
 		},
 		{
 			"equal",
-			Offer{vendor{}, product{"name1", 1.0}, 2},
-			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 2},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
 			true,
 		},
 		{
 			"not equal",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.1}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.1}, 1},
 			false,
 		},
 		{
 			"equal",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, 2},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 2},
 			true,
 		},
 		{
 			"not equal",
-			Offer{vendor{}, product{"name2", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, 2},
+			Offer{VendorIdentity{}, product{"name2", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name2", 1.0}, 2},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name2", 1.0}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name2", 1.1}, 2},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name2", 1.1}, 2},
 			false,
 		},
 		{
 			"not equal",
-			Offer{vendor{}, product{"name2", 1.1}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, 2},
+			Offer{VendorIdentity{}, product{"name2", 1.1}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 2},
 			false,
 		},
 	}
@@ -87,38 +87,38 @@ func TestOffersMerge(t *testing.T) {
 	}{
 		{
 			"merged",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
 			2,
 		},
 		{
 			"merged",
-			Offer{vendor{}, product{"name1", 1.1}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, 3},
+			Offer{VendorIdentity{}, product{"name1", 1.1}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 3},
 			4,
 		},
 		{
 			"merged",
-			Offer{vendor{}, product{"name1", 1.0}, 2},
-			Offer{vendor{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 2},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
 			3,
 		},
 		{
 			"merged",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.1}, 999},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.1}, 999},
 			1000,
 		},
 		{
 			"merged",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, -1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, -1},
 			0,
 		},
 		{
 			"merged",
-			Offer{vendor{}, product{"name1", 1.0}, 1},
-			Offer{vendor{}, product{"name1", 1.0}, -2},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, 1},
+			Offer{VendorIdentity{}, product{"name1", 1.0}, -2},
 			-1,
 		},
 	}
@@ -134,7 +134,7 @@ func TestOffersMerge(t *testing.T) {
 
 func TestNewOffer(t *testing.T) {
 	t.Run("success creation", func(t *testing.T) {
-		offer := NewOffer("siema", product{"e", 1.0}, 2)
+		offer := NewOffer(VendorIdentity{}, product{"e", 1.0}, 2)
 		err := offer.validate()
 		if err != nil {
 			t.Fatalf("creation failed %v", err)
@@ -150,7 +150,7 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("fail when offer count < 0", func(t *testing.T) {
-		off := NewOffer("siema", product{"e", 1.0}, -1)
+		off := NewOffer(VendorIdentity{}, product{"e", 1.0}, -1)
 		err := off.validate()
 		if err == nil {
 			t.Fatalf("should fail, but didnt")
@@ -160,7 +160,7 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("fail when offer count = 0", func(t *testing.T) {
-		off := NewOffer("siema", product{"e", 1.0}, 0)
+		off := NewOffer(VendorIdentity{}, product{"e", 1.0}, 0)
 		err := off.validate()
 		if err == nil {
 			t.Fatalf("should fail, but didnt")
@@ -170,7 +170,7 @@ func TestNewOffer(t *testing.T) {
 		}
 	})
 	t.Run("success when offer count > 0", func(t *testing.T) {
-		off := NewOffer("siema", product{"e", 1.0}, 2)
+		off := NewOffer(VendorIdentity{}, product{"e", 1.0}, 2)
 		err := off.validate()
 		if err != nil {
 			t.Fatalf("expected to create offer but error occured: err %v", err)
@@ -178,26 +178,26 @@ func TestNewOffer(t *testing.T) {
 	})
 }
 
-func TestNewVendor(t *testing.T) {
+func TestNewVendorIdentity(t *testing.T) {
 	t.Run("should fail when name is empty", func(t *testing.T) {
-		vendor := newVendor("")
-		err := vendor.validate()
+		VendorIdentity := NewVendorIdentity("aa")
+		err := VendorIdentity.validate()
 		if err == nil {
 			t.Fatalf("expected to fail")
 		}
-		if !errors.Is(err, ErrVendorIsEmpty) {
-			t.Fatalf("expected wrapped err: %v, actual: %v", ErrVendorIsEmpty, err)
+		if !errors.Is(err, ErrVendorIdentityIsEmpty) {
+			t.Fatalf("expected wrapped err: %v, actual: %v", ErrVendorIdentityIsEmpty, err)
 		}
 	})
 
 	t.Run("success when name len = 1", func(t *testing.T) {
-		vendor := newVendor("a")
-		err := vendor.validate()
+		VendorIdentity := NewVendorIdentity("a")
+		err := VendorIdentity.validate()
 		if err != nil {
-			t.Fatalf("expected to create vendor. actual err: %v", err)
+			t.Fatalf("expected to create VendorIdentityIdentity. actual err: %v", err)
 		}
-		if vendor.name != "a" {
-			t.Fatalf("vendor name is wrong. expected: %s actual %s", "a", vendor.name)
+		if VendorIdentity.id != "a" {
+			t.Fatalf("VendorIdentityIdentity name is wrong. expected: %s actual %s", "a", VendorIdentity.id)
 		}
 	})
 }

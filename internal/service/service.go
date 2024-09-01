@@ -13,11 +13,11 @@ type notifier interface {
 	SendFollowUpMessage(interaction *discordgo.Interaction, content string) error
 }
 
-func New(storage offer.Repository, notifier notifier) *Service {
+func New(offerStorage offer.Repository, notifier notifier) *Service {
 	return &Service{
 		offer: &offerService{
-			storage:  storage,
-			notifier: notifier,
+			offerStorage: offerStorage,
+			notifier:     notifier,
 		},
 	}
 }

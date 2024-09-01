@@ -10,6 +10,14 @@ var (
 	ErrProductPriceLessThanZero  = errors.New("product price is less than 0")
 	ErrVendorIsEmpty             = errors.New("offer vendor is empty")
 	ErrOfferCountLessOrEqualZero = errors.New("offer count is less than 0")
+	ErrProductPriceTooLarge      = errors.New("product price is too large")
+	ErrVendorIdentityIsEmpty     = errors.New("vendor identity is empty")
+)
+
+var (
+	MinPrice float64 = 0.01
+	MaxPrice float64 = 100_000_000
+	MinCount int     = 0
 )
 
 func validationError(wrapped error) error {
@@ -21,9 +29,6 @@ func (o Offer) validate() error {
 		return err
 	}
 	if err := o.product.validate(); err != nil {
-		return err
-	}
-	if err := o.vendor.validate(); err != nil {
 		return err
 	}
 	return nil
@@ -39,22 +44,25 @@ func (p product) validate() error {
 	return nil
 }
 
-func (v vendor) validate() error {
-	if v.name == "" {
-		return validationError(ErrVendorIsEmpty)
+func (v VendorIdentity) validate() error {
+	if v.id == "" {
+		return validationError(ErrVendorIdentityIsEmpty)
 	}
 	return nil
 }
 
 func (p product) validatePrice() error {
-	if p.price < 0 {
+	if p.price < MinPrice {
 		return validationError(ErrProductPriceLessThanZero)
+	}
+	if p.price > MaxPrice {
+		return validationError(ErrProductPriceTooLarge)
 	}
 	return nil
 }
 
 func (o Offer) validateCount() error {
-	if o.count <= 0 {
+	if o.count <= MinCount {
 		return validationError(ErrOfferCountLessOrEqualZero)
 	}
 	return nil

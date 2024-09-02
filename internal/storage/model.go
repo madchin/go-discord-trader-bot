@@ -10,16 +10,17 @@ type offerModel struct {
 	count       int
 }
 
-func (o offerModel) mapToDomainOffer() offer.Offer {
+func (o offerModel) mapToDomainVendorOffer() offer.VendorOffer {
 	product := offer.NewProduct(o.productName, o.price)
+	off := offer.NewOffer(product, o.count)
 	identity := offer.NewVendorIdentity(o.vendorId)
-	return offer.NewOffer(identity, product, o.count)
+	return offer.NewVendorOffer(identity, off)
 }
 
-func mapStorageOffersToDomainOffers(storageOffers []offerModel) offer.Offers {
-	offers := make(offer.Offers, len(storageOffers))
+func mapStorageOffersToDomainVendorOffers(storageOffers []offerModel) offer.VendorOffers {
+	offers := make(offer.VendorOffers, len(storageOffers))
 	for i := 0; i < len(storageOffers); i++ {
-		offers[i] = storageOffers[i].mapToDomainOffer()
+		offers[i] = storageOffers[i].mapToDomainVendorOffer()
 	}
 	return offers
 }

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/bwmarrin/discordgo"
+	followup "github.com/madchin/trader-bot/internal/domain/followup_message"
 	"github.com/madchin/trader-bot/internal/domain/offer"
 )
 
@@ -9,11 +9,7 @@ type Service struct {
 	offer *offerService
 }
 
-type notifier interface {
-	SendFollowUpMessage(interaction *discordgo.Interaction, content string) error
-}
-
-func New(offerStorage offer.Repository, notifier notifier) *Service {
+func New(offerStorage offer.Repository, notifier followup.MessageProducer) *Service {
 	return &Service{
 		offer: &offerService{
 			offerStorage: offerStorage,

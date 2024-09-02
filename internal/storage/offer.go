@@ -38,12 +38,12 @@ func (offerStorage *offerStorage) Remove(ctx context.Context, offer offer.Vendor
 	return nil
 }
 
-func (offerStorage *offerStorage) UpdatePrice(ctx context.Context, offer offer.VendorOffer, onUpdatePrice offer.OnVendorOfferUpdatePriceFunc) error {
+func (offerStorage *offerStorage) UpdatePrice(ctx context.Context, offer offer.VendorOffer, updatePrice float64, onUpdatePrice offer.OnVendorOfferUpdatePriceFunc) error {
 	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
 		return fmt.Errorf("storage offer update price: %w", err)
 	}
-	if err := offerStorage.updatePrice(ctx, tableName, offer, onUpdatePrice); err != nil {
+	if err := offerStorage.updatePrice(ctx, tableName, offer, updatePrice, onUpdatePrice); err != nil {
 		return fmt.Errorf("storage offer update price: %w", err)
 	}
 	return nil
@@ -131,13 +131,13 @@ func (offerStorage *offerStorage) updateCount(ctx context.Context, dbTable strin
 	return nil
 }
 
-func (offerStorage *offerStorage) updatePrice(ctx context.Context, dbTable string, offer offer.VendorOffer, onUpdatePrice offer.OnVendorOfferUpdatePriceFunc) error {
-	if err := onUpdatePrice(offer.Product().Price(), offer.VendorIdentity()); err != nil {
+func (offerStorage *offerStorage) updatePrice(ctx context.Context, dbTable string, offer offer.VendorOffer, updatePrice float64, onUpdatePrice offer.OnVendorOfferUpdatePriceFunc) error {
+	if err := onUpdatePrice(updatePrice, offer.VendorIdentity()); err != nil {
 		return fmt.Errorf("validation: %w", err)
 	}
 	query := fmt.Sprintf("UPDATE %s SET price=$1 WHERE vendorId=$2 AND productName=$3 AND price=$4", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
-		offer.Product().Price(),
+		updatePrice,
 		offer.VendorIdentity().RawValue(),
 		offer.Product().Name(),
 		offer.Product().Price(),

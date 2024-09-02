@@ -71,7 +71,7 @@ func (w *worker) execOffer(ctx context.Context, job gateway.Job) error {
 	case gateway.UpdateCountActionDescriptor.Descriptor():
 		return w.service.Offer().UpdateCount(ctx, job.Interaction(), job.VendorOffer())
 	case gateway.UpdatePriceActionDescriptor.Descriptor():
-		return w.service.Offer().UpdatePrice(ctx, job.Interaction(), job.VendorOffer())
+		return w.service.Offer().UpdatePrice(ctx, job.Interaction(), job.VendorOffer(), job.UpdatePrice())
 	}
 	return errors.New("sub command happened which is not registered")
 }

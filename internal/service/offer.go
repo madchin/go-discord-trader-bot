@@ -112,7 +112,7 @@ func (s *offerService) UpdateCount(ctx context.Context, interaction *discordgo.I
 	return nil
 }
 
-func (s *offerService) UpdatePrice(ctx context.Context, interaction *discordgo.Interaction, vendorOffer offer.VendorOffer) error {
+func (s *offerService) UpdatePrice(ctx context.Context, interaction *discordgo.Interaction, vendorOffer offer.VendorOffer, updatePrice float64) error {
 	vendorOffers, err := s.offerStorage.ListOffersByIdentity(ctx, vendorOffer.VendorIdentity())
 	if err != nil {
 		if err := s.notifier.SendFollowUpMessage(interaction, followup.FailUpdate(vendorOffer.Product().Name())); err != nil {
@@ -132,7 +132,7 @@ func (s *offerService) UpdatePrice(ctx context.Context, interaction *discordgo.I
 		}
 		return newServiceError(ctx, interaction, "item update price fail", errUserHaventOffers)
 	}
-	if err := s.offerStorage.UpdatePrice(ctx, vendorOffer, offer.OnOfferPriceUpdate); err != nil {
+	if err := s.offerStorage.UpdatePrice(ctx, vendorOffer, updatePrice, offer.OnOfferPriceUpdate); err != nil {
 		if err := s.notifier.SendFollowUpMessage(interaction, followup.FailUpdate(vendorOffer.Product().Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item update price fail", err))
 		}

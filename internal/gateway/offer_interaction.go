@@ -6,9 +6,10 @@ import (
 )
 
 type eventOffer struct {
-	item  string
-	count int
-	price float64
+	item        string
+	count       int
+	price       float64
+	updatePrice float64
 }
 
 type offerEventData struct {
@@ -56,8 +57,8 @@ func offerData(appCmdData *discordgo.ApplicationCommandInteractionDataOption, da
 	case updateCountDescriptor.name:
 		data.offer.count = int(appCmdData.IntValue())
 	case priceDescriptor.name:
-		fallthrough
-	case updatePriceDescriptor.name:
 		data.offer.price = appCmdData.FloatValue()
+	case updatePriceDescriptor.name:
+		data.offer.updatePrice = appCmdData.FloatValue()
 	}
 }

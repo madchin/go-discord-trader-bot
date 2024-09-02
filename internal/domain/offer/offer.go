@@ -14,8 +14,6 @@ type Offer struct {
 	count   int
 }
 
-type Offers []Offer
-
 func NewOffer(product product, count int) Offer {
 	return Offer{product, count}
 }

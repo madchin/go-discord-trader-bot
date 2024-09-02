@@ -12,5 +12,5 @@ type Repository interface {
 	Remove(ctx context.Context, offer VendorOffer) error
 	Add(ctx context.Context, offer VendorOffer, onAdd OnVendorOfferAddFunc) error
 	UpdateCount(ctx context.Context, offer VendorOffer, onUpdate OnVendorOfferUpdateCountFunc) error
-	UpdatePrice(ctx context.Context, offer VendorOffer, onUpdate OnVendorOfferUpdatePriceFunc) error
+	UpdatePrice(ctx context.Context, offer VendorOffer, updatePrice float64, onUpdate OnVendorOfferUpdatePriceFunc) error
 }

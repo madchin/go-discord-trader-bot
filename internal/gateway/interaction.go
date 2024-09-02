@@ -12,8 +12,9 @@ type metadata struct {
 }
 
 type event struct {
-	metadata metadata
-	offer    offer.VendorOffer
+	metadata    metadata
+	offer       offer.VendorOffer
+	updatePrice float64
 }
 
 type InteractionData struct {
@@ -25,6 +26,7 @@ type Job interface {
 	Metadata() metadata
 	Interaction() *discordgo.Interaction
 	VendorOffer() offer.VendorOffer
+	UpdatePrice() float64
 }
 
 func (i *InteractionData) VendorOffer() offer.VendorOffer {
@@ -37,6 +39,10 @@ func (i *InteractionData) Interaction() *discordgo.Interaction {
 
 func (i *InteractionData) Metadata() metadata {
 	return i.event.metadata
+}
+
+func (i *InteractionData) UpdatePrice() float64 {
+	return i.event.updatePrice
 }
 
 func (m metadata) Action() string {
@@ -84,6 +90,7 @@ func getInteractionEventData(interactionEvent *discordgo.InteractionCreate) (*In
 		event{
 			meta,
 			offer.NewVendorOffer(offer.NewVendorIdentity(interactionEvent.Member.User.ID), offerEvent.mapToDomainOffer()),
+			offerEvent.offer.updatePrice,
 		},
 	}, nil
 }

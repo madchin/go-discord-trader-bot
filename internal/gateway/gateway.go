@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+	followup "github.com/madchin/trader-bot/internal/domain/followup_message"
 )
 
 type gateway struct {
@@ -39,14 +40,12 @@ func (g *gateway) OpenConnection() error {
 	return nil
 }
 
-func (g *gateway) SendFollowUpMessage(interaction *discordgo.Interaction, content string) error {
-	data := &discordgo.WebhookParams{Content: content}
-	msg, err := g.session.FollowupMessageCreate(interaction, true, data)
+func (g *gateway) SendFollowUpMessage(interaction *discordgo.Interaction, message followup.Message) error {
+	data := &discordgo.WebhookParams{Content: message.Randomize().Content()}
+	_, err := g.session.FollowupMessageCreate(interaction, true, data)
 	if err != nil {
-		log.Printf("followup message err %v", err)
-		return err
+		return fmt.Errorf("gateway send followup message: %w", err)
 	}
-	log.Printf("sent followup message for interaction %v\nmsg: %v", interaction, msg)
 	return nil
 }
 
@@ -58,7 +57,7 @@ func (g *gateway) registerHandlers(handler *handler) {
 
 func (g *gateway) registerAppCommand(appId, guildId string, cmd appCmd) error {
 	if _, err := g.session.ApplicationCommandCreate(appId, guildId, cmd(appId, guildId)); err != nil {
-		return err
+		return fmt.Errorf("gateway register app command: %w", err)
 	}
 	return nil
 }

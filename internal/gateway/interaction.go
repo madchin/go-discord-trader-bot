@@ -1,64 +1,54 @@
 package gateway
 
 import (
+	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/madchin/trader-bot/internal/domain/offer"
 )
 
-type eventData struct {
-	command         string
-	subCommand      string
-	itemName        string
-	itemCount       int
-	itemPrice       float64
-	updateItemPrice float64
-	updateItemCount int
+type metadata struct {
+	command, subCommand, action string
+}
+
+type event struct {
+	metadata metadata
+	offer    offer.VendorOffer
 }
 
 type InteractionData struct {
 	interaction *discordgo.Interaction
-	command     string
-	subCommand  string
-	offer       offer.Offer
-	updateOffer offer.Offer
+	event       event
 }
 
 type Job interface {
-	Command() string
-	Subcommand() string
+	Metadata() metadata
 	Interaction() *discordgo.Interaction
-	Offer() offer.Offer
-	UpdateOffer() offer.Offer
+	VendorOffer() offer.VendorOffer
 }
 
-func (i *InteractionData) Offer() offer.Offer {
-	return i.offer
-}
-
-func (i *InteractionData) UpdateOffer() offer.Offer {
-	return i.updateOffer
+func (i *InteractionData) VendorOffer() offer.VendorOffer {
+	return i.event.offer
 }
 
 func (i *InteractionData) Interaction() *discordgo.Interaction {
 	return i.interaction
 }
 
-func (i *InteractionData) Command() string {
-	return i.command
+func (i *InteractionData) Metadata() metadata {
+	return i.event.metadata
 }
 
-func (i *InteractionData) Subcommand() string {
-	return i.subCommand
+func (m metadata) Action() string {
+	return m.action
 }
 
-func (e eventData) mapToOffer(vendorIdentity offer.VendorIdentity) offer.Offer {
-	product := offer.NewProduct(e.itemName, e.itemPrice)
-	return offer.NewOffer(vendorIdentity, product, e.itemCount)
+func (m metadata) Command() string {
+	return m.command
 }
 
-func (e eventData) mapToUpdateOffer(vendorIdentity offer.VendorIdentity) offer.Offer {
-	product := offer.NewProduct(e.itemName, e.updateItemPrice)
-	return offer.NewOffer(vendorIdentity, product, e.updateItemCount)
+func (m metadata) Subcommand() string {
+	return m.subCommand
 }
 
 func immediateInteractionRespond(s *discordgo.Session, interaction *discordgo.Interaction, responseContent string) error {
@@ -79,53 +69,33 @@ func deferredInteractionRespond(s *discordgo.Session, interaction *discordgo.Int
 }
 
 func getInteractionEventData(interactionEvent *discordgo.InteractionCreate) (*InteractionData, error) {
-	cmdData := interactionEvent.ApplicationCommandData()
-	eventData := &eventData{}
-	getInteractionDataRecursive(cmdData.Options, eventData)
-	vendorIdentity := offer.NewVendorIdentity(interactionEvent.Member.User.ID)
-	off := eventData.mapToOffer(vendorIdentity)
-	updateOff := eventData.mapToUpdateOffer(vendorIdentity)
+	commandData := interactionEvent.ApplicationCommandData()
+	offerEvent, meta := &offerEventData{}, metadata{command: commandData.Name}
+	switch commandData.Name {
+	case OfferCommandDescriptor.name:
+		getInteractionDataRecursive(commandData.Options, offerEvent)
+		meta.subCommand, meta.action = offerEvent.subCommand, offerEvent.action
+	default:
+		return nil, fmt.Errorf("command data is unknown, need to be registered")
+	}
+
 	return &InteractionData{
 		interactionEvent.Interaction,
-		eventData.command,
-		eventData.subCommand,
-		off,
-		updateOff,
+		event{
+			meta,
+			offer.NewVendorOffer(offer.NewVendorIdentity(interactionEvent.Member.User.ID), offerEvent.mapToDomainOffer()),
+		},
 	}, nil
 }
 
-func getInteractionDataRecursive(appCmdData []*discordgo.ApplicationCommandInteractionDataOption, data *eventData) {
+func getInteractionDataRecursive(appCmdData []*discordgo.ApplicationCommandInteractionDataOption, data any) {
 	if appCmdData == nil {
 		return
 	}
 	for _, d := range appCmdData {
-		switch d.Name {
-		case buyCmdDescriptor.name:
-			fallthrough
-		case sellCmdDescriptor.name:
-			data.command = d.Name
-		case AddSubCmdDescriptor.name:
-			fallthrough
-		case RemoveSubCmdDescriptor.name:
-			fallthrough
-		case UpdateCountSubCmdDescriptor.name:
-			fallthrough
-		case UpdatePriceSubCmdDescriptor.name:
-			fallthrough
-		case ListByProductNameSubCmdDescriptor.name:
-			fallthrough
-		case ListByVendorSubCmdDescriptor.name:
-			data.subCommand = d.Name
-		case itemDescriptor.name:
-			data.itemName = d.StringValue()
-		case countDescriptor.name:
-			data.itemCount = int(d.IntValue())
-		case priceDescriptor.name:
-			data.itemPrice = d.FloatValue()
-		case updatePriceDescriptor.name:
-			data.updateItemPrice = d.FloatValue()
-		case updateCountDescriptor.name:
-			data.updateItemCount = int(d.IntValue())
+		switch t := data.(type) {
+		case *offerEventData:
+			offerData(d, t)
 		}
 		getInteractionDataRecursive(d.Options, data)
 	}

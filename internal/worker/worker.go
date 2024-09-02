@@ -49,31 +49,37 @@ func Spawner(ctx context.Context, service *service.Service, scheduler scheduler,
 }
 
 func (w *worker) execute(ctx context.Context, ctxCancel context.CancelFunc, job gateway.Job) {
-	ctx = context.WithValue(ctx, storage.CtxBuySellDbTableDescriptorKey, storage.TableWithGuildIdSuffix(job.Command(), job.Interaction().GuildID))
-	if err := w.exec(ctx, job); err != nil {
-		log.Printf("error in worker %v", err)
+	ctx = context.WithValue(ctx, storage.CtxBuySellDbTableDescriptorKey, storage.TableWithGuildIdSuffix(job.Metadata().Command(), job.Interaction().GuildID))
+	if isOfferCommand(job) {
+		if err := w.execOffer(ctx, job); err != nil {
+			log.Printf("error in worker %v", err)
+		}
 	}
 	ctxCancel()
 }
 
-func (w *worker) exec(ctx context.Context, job gateway.Job) error {
-	switch job.Subcommand() {
-	case gateway.AddSubCmdDescriptor.Descriptor():
-		return w.service.Offer().Add(ctx, job.Interaction(), job.Offer())
-	case gateway.ListByProductNameSubCmdDescriptor.Descriptor():
-		return w.service.Offer().ListByProductName(ctx, job.Interaction(), job.Offer().Product().Name())
-	case gateway.ListByVendorSubCmdDescriptor.Descriptor():
-		return w.service.Offer().ListByVendor(ctx, job.Interaction(), job.Offer().VendorIdentity())
-	case gateway.RemoveSubCmdDescriptor.Descriptor():
-		return w.service.Offer().Remove(ctx, job.Interaction(), job.Offer())
-	case gateway.UpdateCountSubCmdDescriptor.Descriptor():
-		return w.service.Offer().UpdateCount(ctx, job.Interaction(), job.Offer(), job.UpdateOffer().Count())
-	case gateway.UpdatePriceSubCmdDescriptor.Descriptor():
-		return w.service.Offer().UpdatePrice(ctx, job.Interaction(), job.Offer(), job.UpdateOffer().Product().Price())
+func (w *worker) execOffer(ctx context.Context, job gateway.Job) error {
+	switch job.Metadata().Action() {
+	case gateway.AddActionDescriptor.Descriptor():
+		return w.service.Offer().Add(ctx, job.Interaction(), job.VendorOffer())
+	case gateway.ListByProductNameActionDescriptor.Descriptor():
+		return w.service.Offer().ListByProductName(ctx, job.Interaction(), job.VendorOffer().Product().Name())
+	case gateway.ListByVendorActionDescriptor.Descriptor():
+		return w.service.Offer().ListByVendor(ctx, job.Interaction(), job.VendorOffer().VendorIdentity())
+	case gateway.RemoveActionDescriptor.Descriptor():
+		return w.service.Offer().Remove(ctx, job.Interaction(), job.VendorOffer())
+	case gateway.UpdateCountActionDescriptor.Descriptor():
+		return w.service.Offer().UpdateCount(ctx, job.Interaction(), job.VendorOffer())
+	case gateway.UpdatePriceActionDescriptor.Descriptor():
+		return w.service.Offer().UpdatePrice(ctx, job.Interaction(), job.VendorOffer())
 	}
 	return errors.New("sub command happened which is not registered")
 }
 
 func isNoWork(job gateway.Job) bool {
 	return job == nil
+}
+
+func isOfferCommand(job gateway.Job) bool {
+	return job.Metadata().Command() == gateway.OfferCommandDescriptor.Descriptor()
 }

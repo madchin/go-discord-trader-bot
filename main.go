@@ -42,6 +42,7 @@ func main() {
 		panic(err)
 	}
 	offerStorage := storage.NewOffer(conn)
+	itemStorage := storage.NewItemStorage(conn)
 	gateway, err := gateway.NewGatewaySession(envs.app.botToken, envs.app.appId, envs.app.guildId, scheduler.Scheduler)
 	if err != nil {
 		panic(err)
@@ -50,7 +51,7 @@ func main() {
 	if err := gateway.OpenConnection(); err != nil {
 		panic(err)
 	}
-	service := service.New(offerStorage, gateway)
+	service := service.New(offerStorage, itemStorage, gateway)
 	factoryWorkers := worker.NewFactory(100)
 	go worker.Spawner(ctx, service, scheduler.Scheduler, factoryWorkers)
 	<-ctx.Done()

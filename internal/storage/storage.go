@@ -10,8 +10,10 @@ import (
 )
 
 var CtxBuySellDbTableDescriptorKey = ctxBuySellDbTableDescriptorKey{}
+var CtxItemTableDescriptorKey = ctxItembTableDescriptorKey{}
 
 type ctxBuySellDbTableDescriptorKey struct{}
+type ctxItembTableDescriptorKey struct{}
 
 type dbCreds struct {
 	databaseName string

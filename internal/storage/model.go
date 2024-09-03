@@ -1,6 +1,14 @@
 package storage
 
-import "github.com/madchin/trader-bot/internal/domain/offer"
+import (
+	"github.com/madchin/trader-bot/internal/domain/item"
+	"github.com/madchin/trader-bot/internal/domain/offer"
+)
+
+type itemModel struct {
+	id   int
+	name string
+}
 
 type offerModel struct {
 	id          int
@@ -17,10 +25,6 @@ func (o offerModel) mapToDomainVendorOffer() offer.VendorOffer {
 	return offer.NewVendorOffer(identity, off)
 }
 
-func mapStorageOffersToDomainVendorOffers(storageOffers []offerModel) offer.VendorOffers {
-	offers := make(offer.VendorOffers, len(storageOffers))
-	for i := 0; i < len(storageOffers); i++ {
-		offers[i] = storageOffers[i].mapToDomainVendorOffer()
-	}
-	return offers
+func (i itemModel) mapToDomainItem() item.Item {
+	return item.New(i.name)
 }

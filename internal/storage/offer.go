@@ -155,18 +155,18 @@ func (offerStorage *offerStorage) listOffersByName(ctx context.Context, dbTable 
 		return nil, fmt.Errorf("query preparing: %w", err)
 	}
 	defer rows.Close()
-	offerModels, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (offerModel, error) {
+	vendorOffers, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (offer.VendorOffer, error) {
 		var offModel offerModel
 		err := row.Scan(&offModel.id, &offModel.vendorId, &offModel.price, &offModel.productName, &offModel.count)
 		if err != nil {
-			return offerModel{}, fmt.Errorf("during scanning row: %w", err)
+			return offer.VendorOffer{}, fmt.Errorf("during scanning row: %w", err)
 		}
-		return offModel, nil
+		return offModel.mapToDomainVendorOffer(), nil
 	})
 	if err != nil {
 		return offer.VendorOffers{}, fmt.Errorf("collecting rows: %w", err)
 	}
-	return mapStorageOffersToDomainVendorOffers(offerModels), nil
+	return vendorOffers, nil
 }
 
 func (offerStorage *offerStorage) listOffersByIdentity(ctx context.Context, dbTable string, vendorIdentity offer.VendorIdentity) (offer.VendorOffers, error) {
@@ -176,19 +176,19 @@ func (offerStorage *offerStorage) listOffersByIdentity(ctx context.Context, dbTa
 		return nil, fmt.Errorf("query preparing: %w", err)
 	}
 	defer rows.Close()
-	offerModels, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (offerModel, error) {
+	vendorOffers, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (offer.VendorOffer, error) {
 		var offModel offerModel
 		err := row.Scan(&offModel.id, &offModel.vendorId, &offModel.price, &offModel.productName, &offModel.count)
 		if err != nil {
-			return offerModel{}, fmt.Errorf("during scanning row: %w", err)
+			return offer.VendorOffer{}, fmt.Errorf("during scanning row: %w", err)
 		}
-		return offModel, nil
+		return offModel.mapToDomainVendorOffer(), nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("collecting rows: %w", err)
 	}
 
-	return mapStorageOffersToDomainVendorOffers(offerModels), nil
+	return vendorOffers, nil
 }
 
 func (offerStorage *offerStorage) createTable(ctx context.Context, name string) error {

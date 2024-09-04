@@ -25,7 +25,11 @@ func (i Item) Name() string {
 	return i.name
 }
 
-func (items Items) String() string {
+func (i Item) IsZero() bool {
+	return i.name == ""
+}
+
+func (items Items) ToReadableMessage() string {
 	readable := items[0].name
 	for i := 1; i < len(items); i++ {
 		readable += ", " + items[i].name
@@ -40,4 +44,13 @@ func (items Items) Contains(item Item) bool {
 		}
 	}
 	return false
+}
+
+func (items Items) Add(item Item) Items {
+	items = append(items, item)
+	return items
+}
+
+func (items Items) AreEmpty() bool {
+	return len(items) == 0
 }

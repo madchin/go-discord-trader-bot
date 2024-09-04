@@ -12,7 +12,7 @@ type ItemStorage struct {
 	db *pgx.Conn
 }
 
-func NewItemStorage(db *pgx.Conn) *ItemStorage {
+func NewItem(db *pgx.Conn) *ItemStorage {
 	return &ItemStorage{db}
 }
 
@@ -50,8 +50,20 @@ func (itemStorage *ItemStorage) List(ctx context.Context) (item.Items, error) {
 	return items, nil
 }
 
+func (itemStorage *ItemStorage) ListByName(ctx context.Context, incomingItem item.Item) (item.Item, error) {
+	tableName := ctx.Value(CtxItemTableDescriptorKey).(string)
+	if err := itemStorage.createTable(ctx, tableName); err != nil {
+		return item.Item{}, fmt.Errorf("storage item list by name: %w", err)
+	}
+	domainItem, err := itemStorage.listByName(ctx, tableName, incomingItem)
+	if err != nil {
+		return item.Item{}, fmt.Errorf("storage item list by name: %w", err)
+	}
+	return domainItem, nil
+}
+
 func (itemStorage *ItemStorage) add(ctx context.Context, tableName string, item item.Item) error {
-	query := fmt.Sprintf(`INSERT INTO %s name VALUES ($1)`, tableName)
+	query := fmt.Sprintf(`INSERT INTO %s (name) VALUES ($1)`, tableName)
 	if _, err := itemStorage.db.Exec(ctx, query, item.Name()); err != nil {
 		return fmt.Errorf("query execution: %w", err)
 	}
@@ -59,7 +71,7 @@ func (itemStorage *ItemStorage) add(ctx context.Context, tableName string, item 
 }
 
 func (itemStorage *ItemStorage) list(ctx context.Context, tableName string) (item.Items, error) {
-	query := fmt.Sprintf("SELECT DISTINCT id,name FROM %s", tableName)
+	query := fmt.Sprintf("SELECT name FROM %s", tableName)
 	rows, err := itemStorage.db.Query(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("query preparing: %w", err)
@@ -67,7 +79,7 @@ func (itemStorage *ItemStorage) list(ctx context.Context, tableName string) (ite
 	defer rows.Close()
 	items, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (item.Item, error) {
 		var itemModel itemModel
-		if err := row.Scan(&itemModel.id, &itemModel.name); err != nil {
+		if err := row.Scan(&itemModel.name); err != nil {
 			return item.Item{}, fmt.Errorf("during row scanning: %w", err)
 		}
 		return itemModel.mapToDomainItem(), nil
@@ -80,15 +92,25 @@ func (itemStorage *ItemStorage) list(ctx context.Context, tableName string) (ite
 }
 
 func (itemStorage *ItemStorage) remove(ctx context.Context, tableName string, item item.Item) error {
-	query := fmt.Sprintf("REMOVE FROM %s WHERE $1", tableName)
+	query := fmt.Sprintf("DELETE FROM %s WHERE name = $1", tableName)
 	if _, err := itemStorage.db.Exec(ctx, query, item.Name()); err != nil {
 		return fmt.Errorf("query execution: %w", err)
 	}
 	return nil
 }
 
+func (itemStorage *ItemStorage) listByName(ctx context.Context, tableName string, incomingItem item.Item) (item.Item, error) {
+	query := fmt.Sprintf("SELECT name FROM %s WHERE name = $1", tableName)
+	row := itemStorage.db.QueryRow(ctx, query, incomingItem.Name())
+	var itemModel itemModel
+	if err := row.Scan(&itemModel.name); err != nil && err != pgx.ErrNoRows {
+		return item.Item{}, fmt.Errorf("during scanning: %w", err)
+	}
+	return itemModel.mapToDomainItem(), nil
+}
+
 func (itemStorage *ItemStorage) createTable(ctx context.Context, name string) error {
-	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (id SERIAL PRIMARY KEY, name TEXT NOT NULL)`, name)
+	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (name TEXT PRIMARY KEY)`, name)
 	if _, err := itemStorage.db.Exec(ctx, query); err != nil {
 		return fmt.Errorf("creating table with name %s: %w", name, err)
 	}

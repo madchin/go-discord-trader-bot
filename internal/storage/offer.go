@@ -91,8 +91,8 @@ func (offerStorage *offerStorage) add(ctx context.Context, dbTable string, offer
 	query := fmt.Sprintf("INSERT INTO %s (vendorId,price,productName,count) VALUES ($1,$2,$3,$4)", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
 		offer.VendorIdentity().RawValue(),
-		offer.Product().Price(),
-		offer.Product().Name(),
+		offer.Product.Price(),
+		offer.Product.Name(),
 		offer.Count(),
 	)
 	if err != nil {
@@ -104,9 +104,9 @@ func (offerStorage *offerStorage) add(ctx context.Context, dbTable string, offer
 func (offerStorage *offerStorage) remove(ctx context.Context, dbTable string, offer offer.VendorOffer) error {
 	query := fmt.Sprintf("DELETE FROM %s WHERE price=$1 AND vendorId=$2 AND productName=$3", dbTable)
 	_, err := offerStorage.db.Exec(ctx, query,
-		offer.Product().Price(),
+		offer.Product.Price(),
 		offer.VendorIdentity().RawValue(),
-		offer.Product().Name(),
+		offer.Product.Name(),
 	)
 	if err != nil {
 		return fmt.Errorf("query execution: %w", err)
@@ -122,8 +122,8 @@ func (offerStorage *offerStorage) updateCount(ctx context.Context, dbTable strin
 	_, err := offerStorage.db.Exec(ctx, query,
 		offer.Count(),
 		offer.VendorIdentity().RawValue(),
-		offer.Product().Name(),
-		offer.Product().Price(),
+		offer.Product.Name(),
+		offer.Product.Price(),
 	)
 	if err != nil {
 		return fmt.Errorf("query execution: %w", err)
@@ -139,8 +139,8 @@ func (offerStorage *offerStorage) updatePrice(ctx context.Context, dbTable strin
 	_, err := offerStorage.db.Exec(ctx, query,
 		updatePrice,
 		offer.VendorIdentity().RawValue(),
-		offer.Product().Name(),
-		offer.Product().Price(),
+		offer.Product.Name(),
+		offer.Product.Price(),
 	)
 	if err != nil {
 		return fmt.Errorf("query execution: %w", err)

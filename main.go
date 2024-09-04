@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/madchin/trader-bot/internal/gateway"
+	"github.com/madchin/trader-bot/internal/gateway/command"
 	"github.com/madchin/trader-bot/internal/scheduler"
 	"github.com/madchin/trader-bot/internal/service"
 	"github.com/madchin/trader-bot/internal/storage"
@@ -16,9 +17,10 @@ import (
 )
 
 type appEnvs struct {
-	botToken string
-	appId    string
-	guildId  string
+	botToken               string
+	appId                  string
+	guildId                string
+	runWithCommandRegister bool
 }
 
 type envs struct {
@@ -42,7 +44,7 @@ func main() {
 		panic(err)
 	}
 	offerStorage := storage.NewOffer(conn)
-	itemStorage := storage.NewItemStorage(conn)
+	itemStorage := storage.NewItem(conn)
 	gateway, err := gateway.NewGatewaySession(envs.app.botToken, envs.app.appId, envs.app.guildId, scheduler.Scheduler)
 	if err != nil {
 		panic(err)
@@ -51,7 +53,11 @@ func main() {
 	if err := gateway.OpenConnection(); err != nil {
 		panic(err)
 	}
-	service := service.New(offerStorage, itemStorage, gateway)
+	if envs.app.runWithCommandRegister {
+		itemRegistrar := command.ItemRegistrarBuilder(envs.app.appId, envs.app.guildId)
+		gateway.RegisterAppCommand(envs.app.appId, envs.app.guildId, itemRegistrar.ApplicationCommand())
+	}
+	service := service.New(offerStorage, itemStorage, gateway, gateway)
 	factoryWorkers := worker.NewFactory(100)
 	go worker.Spawner(ctx, service, scheduler.Scheduler, factoryWorkers)
 	<-ctx.Done()
@@ -96,6 +102,13 @@ func requiredEnvs() (envs envs, err error) {
 		envs.app.guildId = os.Getenv("GUILD_ID")
 		if envs.app.guildId == "" {
 			err = errors.New("GUILD_ID environment not provided. Its required in DEV run-time environment")
+			return
+		}
+		withCommandRegister := os.Getenv("WITH_COMMAND_REGISTER")
+		if withCommandRegister == "false" || withCommandRegister == "true" {
+			envs.app.runWithCommandRegister = withCommandRegister == "true"
+		} else {
+			err = errors.New("WITH_COMMAND_REGISTER environment variable is not provided, should be false or true. Its required in DEV run-time environment")
 			return
 		}
 	}

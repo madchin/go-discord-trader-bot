@@ -6,7 +6,6 @@ import (
 )
 
 type itemModel struct {
-	id   int
 	name string
 }
 

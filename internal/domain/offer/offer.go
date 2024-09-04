@@ -10,16 +10,12 @@ var (
 )
 
 type Offer struct {
-	product product
+	Product product
 	count   int
 }
 
 func NewOffer(product product, count int) Offer {
 	return Offer{product, count}
-}
-
-func (o Offer) Product() product {
-	return o.product
 }
 
 func (o Offer) Count() int {

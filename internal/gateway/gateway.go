@@ -6,6 +6,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	followup "github.com/madchin/trader-bot/internal/domain/followup_message"
+	"github.com/madchin/trader-bot/internal/gateway/command"
 )
 
 type gateway struct {
@@ -20,9 +21,6 @@ func NewGatewaySession(botToken, appId, guildId string, scheduler scheduler) (*g
 	gateway := &gateway{session}
 	handler := &handler{scheduler}
 	gateway.registerHandlers(handler)
-	if err := gateway.registerAppCommand(appId, guildId, offerCommand); err != nil {
-		return nil, err
-	}
 	return gateway, nil
 }
 
@@ -55,8 +53,8 @@ func (g *gateway) registerHandlers(handler *handler) {
 	g.session.AddHandler(handler.onUserInteraction)
 }
 
-func (g *gateway) registerAppCommand(appId, guildId string, cmd appCmd) error {
-	if _, err := g.session.ApplicationCommandCreate(appId, guildId, cmd(appId, guildId)); err != nil {
+func (g *gateway) RegisterAppCommand(appId, guildId string, cmd command.ApplicationCommand) error {
+	if _, err := g.session.ApplicationCommandCreate(appId, guildId, cmd.Raw()); err != nil {
 		return fmt.Errorf("gateway register app command: %w", err)
 	}
 	return nil

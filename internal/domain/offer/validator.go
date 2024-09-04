@@ -9,7 +9,7 @@ var (
 	ErrProductNameEmpty          = errors.New("product name is empty")
 	ErrProductPriceLessThanZero  = errors.New("product price is less than 0")
 	ErrVendorIsEmpty             = errors.New("offer vendor is empty")
-	ErrOfferCountLessOrEqualZero = errors.New("offer count is less than 0")
+	ErrOfferCountLessOrEqualZero = errors.New("offer count is less or equal 0")
 	ErrProductPriceTooLarge      = errors.New("product price is too large")
 	ErrVendorIdentityIsEmpty     = errors.New("vendor identity is empty")
 )
@@ -17,7 +17,7 @@ var (
 var (
 	MinPrice float64 = 0.01
 	MaxPrice float64 = 100_000_000
-	MinCount int     = 0
+	MinCount int     = 1
 )
 
 func validationError(wrapped error) error {
@@ -28,7 +28,7 @@ func (o Offer) validate() error {
 	if err := o.validateCount(); err != nil {
 		return err
 	}
-	if err := o.product.validate(); err != nil {
+	if err := o.Product.validate(); err != nil {
 		return err
 	}
 	return nil

@@ -142,11 +142,11 @@ func TestNewOffer(t *testing.T) {
 		if offer.count != 2 {
 			t.Fatalf("expected count 2, actual %d", offer.count)
 		}
-		if offer.product.name != "e" {
-			t.Fatalf("expected name \"e\", actual %s", offer.product.name)
+		if offer.Product.name != "e" {
+			t.Fatalf("expected name \"e\", actual %s", offer.Product.name)
 		}
-		if offer.product.price != 1.0 {
-			t.Fatalf("expected price 1.0, actual %f", offer.product.price)
+		if offer.Product.price != 1.0 {
+			t.Fatalf("expected price 1.0, actual %f", offer.Product.price)
 		}
 	})
 	t.Run("fail when offer count < 0", func(t *testing.T) {

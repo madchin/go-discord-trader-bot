@@ -35,8 +35,8 @@ func (o VendorOffer) VendorIdentity() VendorIdentity {
 func (o VendorOffers) ToReadableMessage() string {
 	offers := make([]string, len(o))
 	for i := 0; i < len(o); i++ {
-		price := fmt.Sprintf("%.2f", o[i].product.price)
-		offers[i] = fmt.Sprintf("Product: %s, Each Price: %s, Count: %d, Vendor: %s", o[i].product.name, price, o[i].count, "<@!"+o[i].vendorIdentity.id+">")
+		price := fmt.Sprintf("%.2f", o[i].Product.price)
+		offers[i] = fmt.Sprintf("Product: %s, Each Price: %s, Count: %d, Vendor: %s", o[i].Product.name, price, o[i].count, "<@!"+o[i].vendorIdentity.id+">")
 	}
 	return strings.Join(offers, ",\n")
 }
@@ -79,5 +79,5 @@ func (o VendorOffer) merge(off VendorOffer) VendorOffer {
 }
 
 func (o VendorOffer) isSameOffer(off VendorOffer) bool {
-	return o.product.name == off.product.name && o.product.price == off.product.price
+	return o.Product.name == off.Product.name && o.Product.price == off.Product.price
 }

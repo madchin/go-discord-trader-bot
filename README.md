@@ -1,10 +1,27 @@
 ## Trader Bot
 
 * Bot for trading items
-
-* Simple interface, send commands with /command
 ```
+Want to create market for your discord? 
+
+Would you like to declare what items ppl will trading on your server?
+
+In this type of implementation, discord server / guild **administrator**,
+needs to register items for which offers will be created with **/item-register**
+
+You can declare up to 25 items (limit by discord), for each item drop down list
+with items is displayed on discord for user when writing command 
+to add / update / remove offer.
+
+There is also rate limit for registering commands per guild, so be cautious.
+When writing this project limit is **200** and resets after 24h.
+```
+* Simple interface, send commands with /command
     Actual supported commands:
+        /item-register
+            add
+            remove
+            list 
         /offer sell
             add
             remove
@@ -76,7 +93,11 @@ random
     ***.app.env***
 
     * In **DEV** environment, application commands are registered in **guild**, 
-      therefore the **GUILD_ID** environment is **required**.
+      therefore the **GUILD_ID** environment is **required** 
+      and **WITH_ITEM_REGISTRAR_COMMAND_REGISTER=true** ONLY IF 
+      you want to register item registrar command on start. 
+      You should specify it once, then set it to false,
+      because there is rate limit for registering commands on discord.
 
     * In **PROD** environment, application commands are registered **globally**,
       therefore the **GUILD_ID** environment is **NOT** required.

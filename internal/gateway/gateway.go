@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
-	followup "github.com/madchin/trader-bot/internal/domain/followup_message"
 	"github.com/madchin/trader-bot/internal/gateway/command"
+	followup "github.com/madchin/trader-bot/internal/gateway/followup_message"
 )
 
 type gateway struct {

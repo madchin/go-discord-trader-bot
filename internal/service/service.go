@@ -2,9 +2,9 @@ package service
 
 import (
 	"github.com/bwmarrin/discordgo"
-	followup "github.com/madchin/trader-bot/internal/domain/followup_message"
 	"github.com/madchin/trader-bot/internal/domain/item"
 	"github.com/madchin/trader-bot/internal/domain/offer"
+	followup "github.com/madchin/trader-bot/internal/gateway/followup_message"
 )
 
 type messageProducer interface {

@@ -42,9 +42,10 @@ type (
 		failOnNotHavingAnyOffers metadata
 	}
 	item struct {
-		add    *itemAdd
-		remove *itemRemove
-		list   *itemListAll
+		add      *itemAdd
+		remove   *itemRemove
+		list     *itemListAll
+		register *itemRegister
 	}
 	itemAdd struct {
 		success              metadata
@@ -60,6 +61,11 @@ type (
 		success           metadata
 		fail              metadata
 		failItemsNotExist metadata
+	}
+	itemRegister struct {
+		success           metadata
+		fail              metadata
+		failLimitExceeded metadata
 	}
 )
 
@@ -114,6 +120,11 @@ var followUpMessage = &followUp{
 			success:           metadata{"item_success_list"},
 			fail:              metadata{"item_fail_list"},
 			failItemsNotExist: metadata{"item_fail_items_not_exist"},
+		},
+		register: &itemRegister{
+			success:           metadata{"item_register_success"},
+			fail:              metadata{"item_register_fail"},
+			failLimitExceeded: metadata{"item_register_fail_limit_exceeded"},
 		},
 	},
 }
@@ -199,6 +210,15 @@ var (
 	}
 	ItemFailItemsNotExist = func(name string) Message {
 		return Message{followUpMessage.item.list.failItemsNotExist, "No items registered actually. Need help with something else?", name}
+	}
+	ItemRegisterSuccess = func(name string) Message {
+		return Message{followUpMessage.item.register.success, "Item %s successfully registered! Need more help? Just ask!", name}
+	}
+	ItemRegisterFail = func(name string) Message {
+		return Message{followUpMessage.item.register.fail, "Failed to register item %s. Try again or ask for another help", name}
+	}
+	ItemRegisterFailLimitExceeded = func(limit string) Message {
+		return Message{followUpMessage.item.register.failLimitExceeded, "Unable to register item because you have already exceeded limit which is: %s", limit}
 	}
 )
 
@@ -526,6 +546,42 @@ var messageBucket = map[metadata][]messageGenerator{
 		}),
 		messageGenerator(func(name string) Message {
 			return Message{followUpMessage.item.list.failItemsNotExist, "Can't find any items, because you didnt registered any. Need more help? Feel free to ask!", name}
+		}),
+	},
+	followUpMessage.item.register.success: {
+		messageGenerator(ItemRegisterSuccess),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.register.success, fmt.Sprintf("Item %s has been successfully registered! Need any further help?", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.register.success, fmt.Sprintf("Successfully registered item %s! Anything else we can assist you with?", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.register.success, fmt.Sprintf("Item %s is now registered! How can we assist you further?", name), name}
+		}),
+	},
+	followUpMessage.item.register.fail: {
+		messageGenerator(ItemRegisterFail),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.register.fail, fmt.Sprintf("Registering item %s failed. Want to give it another try or need assistance?", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.register.fail, fmt.Sprintf("Unable to register item %s. How else can we help you?", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.register.fail, fmt.Sprintf("Failed to register %s. Let us know how we can assist!", name), name}
+		}),
+	},
+	followUpMessage.item.register.failLimitExceeded: {
+		messageGenerator(ItemRegisterFailLimitExceeded),
+		messageGenerator(func(limit string) Message {
+			return Message{followUpMessage.item.register.failLimitExceeded, fmt.Sprintf("Item registration failed because you have exceeded the allowed limit which is %s.", limit), limit}
+		}),
+		messageGenerator(func(limit string) Message {
+			return Message{followUpMessage.item.register.failLimitExceeded, fmt.Sprintf("Unable to register the item. You have exceeded the maximum limit which is %s.", limit), limit}
+		}),
+		messageGenerator(func(limit string) Message {
+			return Message{followUpMessage.item.register.failLimitExceeded, fmt.Sprintf("Cant register item, registration limit exceeded: %s. How else can we assist?", limit), limit}
 		}),
 	},
 }

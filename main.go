@@ -55,7 +55,10 @@ func main() {
 	}
 	if envs.app.runWithCommandRegister {
 		itemRegistrar := command.ItemRegistrarBuilder(envs.app.appId, envs.app.guildId)
-		gateway.RegisterAppCommand(envs.app.appId, envs.app.guildId, itemRegistrar.ApplicationCommand())
+		err := gateway.RegisterAppCommand(envs.app.appId, envs.app.guildId, itemRegistrar.ApplicationCommand())
+		if err != nil {
+			panic(err)
+		}
 	}
 	service := service.New(offerStorage, itemStorage, gateway, gateway)
 	factoryWorkers := worker.NewFactory(100)
@@ -104,11 +107,11 @@ func requiredEnvs() (envs envs, err error) {
 			err = errors.New("GUILD_ID environment not provided. Its required in DEV run-time environment")
 			return
 		}
-		withCommandRegister := os.Getenv("WITH_COMMAND_REGISTER")
+		withCommandRegister := os.Getenv("WITH_ITEM_REGISTRAR_COMMAND_REGISTER")
 		if withCommandRegister == "false" || withCommandRegister == "true" {
 			envs.app.runWithCommandRegister = withCommandRegister == "true"
 		} else {
-			err = errors.New("WITH_COMMAND_REGISTER environment variable is not provided, should be false or true. Its required in DEV run-time environment")
+			err = errors.New("WITH_ITEM_REGISTRAR_COMMAND_REGISTER environment variable is not provided, should be false or true. Its required in DEV run-time environment")
 			return
 		}
 	}

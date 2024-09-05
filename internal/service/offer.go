@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/madchin/trader-bot/internal/domain/item"
 	"github.com/madchin/trader-bot/internal/domain/offer"
 	followup "github.com/madchin/trader-bot/internal/gateway/followup_message"
 )
@@ -12,9 +13,23 @@ import (
 type offerService struct {
 	notifier     messageProducer
 	offerStorage offer.Repository
+	itemStorage  item.Repository
 }
 
 func (s *offerService) Add(ctx context.Context, interaction *discordgo.Interaction, vendorOffer offer.VendorOffer) error {
+	item, err := s.itemStorage.ListByName(ctx, item.New(vendorOffer.Product.Name()))
+	if err != nil {
+		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAddItemNotRegistered(vendorOffer.Product.Name())); err != nil {
+			log.Print(newServiceError(ctx, interaction, "item add fail", err))
+		}
+		return newServiceError(ctx, interaction, "item add fail", err)
+	}
+	if item.IsZero() {
+		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAdd(vendorOffer.Product.Name())); err != nil {
+			log.Print(newServiceError(ctx, interaction, "item add fail", err))
+		}
+		return newServiceError(ctx, interaction, "item add fail", err)
+	}
 	offers, err := s.offerStorage.ListOffersByIdentity(ctx, vendorOffer.VendorIdentity())
 	if err != nil {
 		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAdd(vendorOffer.Product.Name())); err != nil {

@@ -14,10 +14,11 @@ type (
 		listVendor *offerListVendor
 	}
 	offerAdd struct {
-		success         metadata
-		fail            metadata
-		updateOnAdd     metadata
-		failUpdateOnAdd metadata
+		success               metadata
+		fail                  metadata
+		updateOnAdd           metadata
+		failUpdateOnAdd       metadata
+		failItemNotRegistered metadata
 	}
 	offerUpdate struct {
 		success                  metadata
@@ -77,10 +78,11 @@ type followUp struct {
 var followUpMessage = &followUp{
 	offer: &offer{
 		add: &offerAdd{
-			success:         metadata{"offer_success_add"},
-			fail:            metadata{"offer_fail_add"},
-			updateOnAdd:     metadata{"offer_success_update_on_add"},
-			failUpdateOnAdd: metadata{"offer_fail_update_on_add"},
+			success:               metadata{"offer_success_add"},
+			fail:                  metadata{"offer_fail_add"},
+			updateOnAdd:           metadata{"offer_success_update_on_add"},
+			failUpdateOnAdd:       metadata{"offer_fail_update_on_add"},
+			failItemNotRegistered: metadata{"offer_fail_add_item_not_registered"},
 		},
 		update: &offerUpdate{
 			success:                  metadata{"offer_success_update"},
@@ -212,13 +214,16 @@ var (
 		return Message{followUpMessage.item.list.failItemsNotExist, "No items registered actually. Need help with something else?", name}
 	}
 	ItemRegisterSuccess = func(name string) Message {
-		return Message{followUpMessage.item.register.success, "Item %s successfully registered! Need more help? Just ask!", name}
+		return Message{followUpMessage.item.register.success, fmt.Sprintf("Item %s successfully registered! Need more help? Just ask!", name), name}
 	}
 	ItemRegisterFail = func(name string) Message {
-		return Message{followUpMessage.item.register.fail, "Failed to register item %s. Try again or ask for another help", name}
+		return Message{followUpMessage.item.register.fail, fmt.Sprintf("Failed to register item %s. Try again or ask for another help", name), name}
 	}
 	ItemRegisterFailLimitExceeded = func(limit string) Message {
-		return Message{followUpMessage.item.register.failLimitExceeded, "Unable to register item because you have already exceeded limit which is: %s", limit}
+		return Message{followUpMessage.item.register.failLimitExceeded, fmt.Sprintf("Unable to register item because you have already exceeded limit which is: %s", limit), limit}
+	}
+	OfferFailAddItemNotRegistered = func(name string) Message {
+		return Message{followUpMessage.offer.add.failItemNotRegistered, fmt.Sprintf("Unable to add item %s because it is not registered", name), name}
 	}
 )
 
@@ -582,6 +587,21 @@ var messageBucket = map[metadata][]messageGenerator{
 		}),
 		messageGenerator(func(limit string) Message {
 			return Message{followUpMessage.item.register.failLimitExceeded, fmt.Sprintf("Cant register item, registration limit exceeded: %s. How else can we assist?", limit), limit}
+		}),
+	},
+	followUpMessage.offer.add.failItemNotRegistered: {
+		messageGenerator(OfferFailAddItemNotRegistered),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.offer.add.failItemNotRegistered, fmt.Sprintf("Item %s cannot be added because it is not registered.", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.offer.add.failItemNotRegistered, fmt.Sprintf("You can't add item %s because it's not registered. Please register it first.", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.offer.add.failItemNotRegistered, fmt.Sprintf("Adding item %s failed since it hasn't been registered yet.", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.offer.add.failItemNotRegistered, fmt.Sprintf("Item %s isn't registered, so it can't be added. Please register the item and try again.", name), name}
 		}),
 	},
 }

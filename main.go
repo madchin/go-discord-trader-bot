@@ -60,7 +60,7 @@ func main() {
 			panic(err)
 		}
 	}
-	service := service.New(offerStorage, itemStorage, gateway, gateway)
+	service := service.New(offerStorage, itemStorage, gateway)
 	factoryWorkers := worker.NewFactory(100)
 	go worker.Spawner(ctx, service, scheduler.Scheduler, factoryWorkers)
 	<-ctx.Done()

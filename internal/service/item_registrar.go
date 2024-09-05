@@ -12,10 +12,6 @@ import (
 	followup "github.com/madchin/trader-bot/internal/gateway/followup_message"
 )
 
-type commandRegistrar interface {
-	RegisterAppCommand(appId, guildId string, cmd command.ApplicationCommand) error
-}
-
 type itemRegistrar struct {
 	itemStorage      item.Repository
 	notifier         messageProducer

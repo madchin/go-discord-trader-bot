@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/bwmarrin/discordgo"
 	followup "github.com/madchin/trader-bot/internal/domain/followup_message"
@@ -37,13 +36,12 @@ func (itemRegistrar *itemRegistrar) Add(ctx context.Context, interaction *discor
 		}
 		return newServiceError(ctx, interaction, "item registrar add", errors.New("item already registered"))
 	}
-	choices, err := mapDomainItemsToChoices(items)
-	//FIXME
+	choices, err := command.NewChoices(len(items) + 1)
 	if err != nil {
-		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailAdd(fmt.Sprintf("%s, MAX ITEM LIMIT REACHED", incomingItem.Name()))); err != nil {
+		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterFailLimitExceeded(fmt.Sprintf("%d", command.ChoicesLimit))); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar add", err))
+			return newServiceError(ctx, interaction, "item registrar add", err)
 		}
-		return newServiceError(ctx, interaction, "item registrar add, map domain items to command choices", err)
 	}
 	if err := itemRegistrar.itemStorage.Add(ctx, incomingItem); err != nil {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailAdd(incomingItem.Name())); err != nil {
@@ -51,63 +49,50 @@ func (itemRegistrar *itemRegistrar) Add(ctx context.Context, interaction *discor
 		}
 		return newServiceError(ctx, interaction, "item registrar add", err)
 	}
-	appId, guildId := os.Getenv("APPLICATION_ID"), os.Getenv("GUILD_ID")
+	appId, guildId := interaction.AppID, interaction.Message.GuildID
 	cmd := command.OfferBuilder(appId, guildId, choices).ApplicationCommand()
 	if err := itemRegistrar.commandRegistrar.RegisterAppCommand(appId, guildId, cmd); err != nil {
-		//FIXME
-		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailAdd("SOmething wrong happened during reigstering offer")); err != nil {
+		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterFail(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar add", err))
 		}
-		return newServiceError(ctx, interaction, "item registrar add, register command with added item", err)
+		return newServiceError(ctx, interaction, "item registrar add", err)
 	}
-	if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemSuccessAdd(incomingItem.Name())); err != nil {
+	if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterSuccess(incomingItem.Name())); err != nil {
 		log.Print(newServiceError(ctx, interaction, "item registrar add", err))
 	}
 	return nil
 }
 
 func (itemRegistrar *itemRegistrar) Remove(ctx context.Context, interaction *discordgo.Interaction, incomingItem item.Item) error {
-	item, err := itemRegistrar.itemStorage.ListByName(ctx, incomingItem)
+	items, err := itemRegistrar.itemStorage.List(ctx)
 	if err != nil {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailRemove(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
 		}
 		return newServiceError(ctx, interaction, "item registrar remove", err)
 	}
-	if item.IsZero() {
+	if !items.Contains(incomingItem) {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailRemoveItemNotExist(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
 		}
 		return newServiceError(ctx, interaction, "item registrar remove", errors.New("item not exists"))
 	}
-	if err := itemRegistrar.itemStorage.Remove(ctx, item); err != nil {
+	if err := itemRegistrar.itemStorage.Remove(ctx, incomingItem); err != nil {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailRemove(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
 		}
 		return newServiceError(ctx, interaction, "item registrar remove", err)
 	}
-	items, err := itemRegistrar.itemStorage.List(ctx)
-	if err != nil {
-		return newServiceError(ctx, interaction, "item registrar remove, retrieve items for command registrar", err)
-	}
-	choices, err := mapDomainItemsToChoices(items)
-	if err != nil {
-		//FIXME
-		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailRemove("ERROR HAPPENED DURING REGISTERING COMMAND")); err != nil {
-			log.Print(newServiceError(ctx, interaction, "item registrar add", err))
-		}
-		return newServiceError(ctx, interaction, "item registrar remove, map items to choices for command registrar", err)
-	}
-	appId, guildId := os.Getenv("APPLICATION_ID"), os.Getenv("GUILD_ID")
+	choices, _ := command.NewChoices(len(items) - 1)
+	appId, guildId := interaction.AppID, interaction.Message.GuildID
 	cmd := command.OfferBuilder(appId, guildId, choices).ApplicationCommand()
 	if err := itemRegistrar.commandRegistrar.RegisterAppCommand(appId, guildId, cmd); err != nil {
-		//FIXME
-		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailRemove("ERROR HAPPENED DURING REGISTERING COMMAND")); err != nil {
-			log.Print(newServiceError(ctx, interaction, "item registrar add", err))
+		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterFail(incomingItem.Name())); err != nil {
+			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
 		}
-		return newServiceError(ctx, interaction, "item registrar remove, register new command without removed item", err)
+		return newServiceError(ctx, interaction, "item registrar remove", err)
 	}
-	if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemSuccessRemove(incomingItem.Name())); err != nil {
+	if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterSuccess(incomingItem.Name())); err != nil {
 		log.Print(newServiceError(ctx, interaction, "item registrar add", err))
 	}
 	return nil
@@ -131,17 +116,4 @@ func (itemRegistrar *itemRegistrar) List(ctx context.Context, interaction *disco
 		log.Print(newServiceError(ctx, interaction, "item registrar list", err))
 	}
 	return nil
-}
-
-func mapDomainItemsToChoices(domainItems item.Items) (*command.Choices, error) {
-	choices := command.NewChoices(len(domainItems) + 1)
-	for i := 0; i < len(domainItems); i++ {
-		if err := choices.AddNext(&discordgo.ApplicationCommandOptionChoice{
-			Name:  domainItems[i].Name(),
-			Value: domainItems[i].Name(),
-		}); err != nil {
-			return nil, fmt.Errorf("during addition next choice: %w", err)
-		}
-	}
-	return choices, nil
 }

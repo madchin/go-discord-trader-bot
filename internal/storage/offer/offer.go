@@ -1,4 +1,4 @@
-package storage
+package storage_offer
 
 import (
 	"context"
@@ -6,18 +6,19 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/madchin/trader-bot/internal/domain/offer"
+	"github.com/madchin/trader-bot/internal/storage"
 )
 
 type offerStorage struct {
 	db *pgx.Conn
 }
 
-func NewOffer(db *pgx.Conn) *offerStorage {
+func New(db *pgx.Conn) *offerStorage {
 	return &offerStorage{db}
 }
 
 func (offerStorage *offerStorage) Add(ctx context.Context, offer offer.VendorOffer, onAdd offer.OnVendorOfferAddFunc) error {
-	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
+	tableName := ctx.Value(storage.CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
 		return fmt.Errorf("storage offer add: %w", err)
 	}
@@ -28,7 +29,7 @@ func (offerStorage *offerStorage) Add(ctx context.Context, offer offer.VendorOff
 }
 
 func (offerStorage *offerStorage) Remove(ctx context.Context, offer offer.VendorOffer) error {
-	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
+	tableName := ctx.Value(storage.CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
 		return fmt.Errorf("storage offer remove: %w", err)
 	}
@@ -39,7 +40,7 @@ func (offerStorage *offerStorage) Remove(ctx context.Context, offer offer.Vendor
 }
 
 func (offerStorage *offerStorage) UpdatePrice(ctx context.Context, offer offer.VendorOffer, updatePrice float64, onUpdatePrice offer.OnVendorOfferUpdatePriceFunc) error {
-	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
+	tableName := ctx.Value(storage.CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
 		return fmt.Errorf("storage offer update price: %w", err)
 	}
@@ -50,7 +51,7 @@ func (offerStorage *offerStorage) UpdatePrice(ctx context.Context, offer offer.V
 }
 
 func (offerStorage *offerStorage) UpdateCount(ctx context.Context, offer offer.VendorOffer, onUpdateCount offer.OnVendorOfferUpdateCountFunc) error {
-	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
+	tableName := ctx.Value(storage.CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
 		return fmt.Errorf("storage offer update count: %w", err)
 	}
@@ -61,7 +62,7 @@ func (offerStorage *offerStorage) UpdateCount(ctx context.Context, offer offer.V
 }
 
 func (offerStorage *offerStorage) ListOffersByName(ctx context.Context, productName string) (offer.VendorOffers, error) {
-	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
+	tableName := ctx.Value(storage.CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
 		return offer.VendorOffers{}, fmt.Errorf("storage offer list offers: %w", err)
 	}
@@ -73,7 +74,7 @@ func (offerStorage *offerStorage) ListOffersByName(ctx context.Context, productN
 }
 
 func (offerStorage *offerStorage) ListOffersByIdentity(ctx context.Context, vendorIdentity offer.VendorIdentity) (offer.VendorOffers, error) {
-	tableName := ctx.Value(CtxBuySellDbTableDescriptorKey).(string)
+	tableName := ctx.Value(storage.CtxBuySellDbTableDescriptorKey).(string)
 	if err := offerStorage.createTable(ctx, tableName); err != nil {
 		return offer.VendorOffers{}, fmt.Errorf("storage offer list vendor offers: %w", err)
 	}

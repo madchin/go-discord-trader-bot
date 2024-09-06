@@ -9,11 +9,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var CtxBuySellDbTableDescriptorKey = ctxBuySellDbTableDescriptorKey{}
-var CtxItemTableDescriptorKey = ctxItembTableDescriptorKey{}
+type ctxItembTableDescriptorKey struct{}
+
+var CtxItemTableDescriptorKey = &ctxItembTableDescriptorKey{}
 
 type ctxBuySellDbTableDescriptorKey struct{}
-type ctxItembTableDescriptorKey struct{}
+
+var CtxBuySellDbTableDescriptorKey = &ctxBuySellDbTableDescriptorKey{}
 
 type dbCreds struct {
 	databaseName string

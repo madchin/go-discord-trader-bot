@@ -22,28 +22,20 @@ type botService interface {
 }
 
 type Service struct {
-	offer         *offerService
-	itemRegistrar *itemRegistrar
+	Offer         *offerService
+	ItemRegistrar *itemRegistrar
 }
 
 func New(offerStorage offer.Repository, itemStorage item.Repository, botService botService) *Service {
 	return &Service{
-		offer: &offerService{
+		Offer: &offerService{
 			offerStorage: offerStorage,
 			notifier:     botService.(messageProducer),
 		},
-		itemRegistrar: &itemRegistrar{
+		ItemRegistrar: &itemRegistrar{
 			itemStorage:      itemStorage,
 			notifier:         botService.(messageProducer),
 			commandRegistrar: botService.(commandRegistrar),
 		},
 	}
-}
-
-func (s *Service) Offer() *offerService {
-	return s.offer
-}
-
-func (s *Service) ItemRegistrar() *itemRegistrar {
-	return s.itemRegistrar
 }

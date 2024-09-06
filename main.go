@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/madchin/trader-bot/internal/gateway"
@@ -13,20 +14,28 @@ import (
 	"github.com/madchin/trader-bot/internal/scheduler"
 	"github.com/madchin/trader-bot/internal/service"
 	"github.com/madchin/trader-bot/internal/storage"
+	storage_item "github.com/madchin/trader-bot/internal/storage/item"
+	storage_offer "github.com/madchin/trader-bot/internal/storage/offer"
 	"github.com/madchin/trader-bot/internal/worker"
+	"github.com/patrickmn/go-cache"
 )
 
 type appEnvs struct {
-	botToken               string
-	appId                  string
-	guildId                string
-	runWithCommandRegister bool
+	botToken                     string
+	appId                        string
+	guildId                      string
+	registerItemRegistrarCommand bool
 }
 
 type envs struct {
 	runtimeEnvironment string
 	app                appEnvs
 }
+
+const (
+	cacheExpiration      = 10 * time.Minute
+	cacheCleanUpInterval = 15 * time.Minute
+)
 
 func main() {
 	ctx := context.Background()
@@ -39,12 +48,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	conn, err := storage.Connect(dbCreds)
+	dbConn, err := storage.Connect(dbCreds)
 	if err != nil {
 		panic(err)
 	}
-	offerStorage := storage.NewOffer(conn)
-	itemStorage := storage.NewItem(conn)
+	offerStorage := storage_offer.New(dbConn)
+	itemCache := cache.New(cacheExpiration, cacheCleanUpInterval)
+	itemStorage := storage_item.New(dbConn, itemCache)
 	gateway, err := gateway.NewGatewaySession(envs.app.botToken, envs.app.appId, envs.app.guildId, scheduler.Scheduler)
 	if err != nil {
 		panic(err)
@@ -53,7 +63,7 @@ func main() {
 	if err := gateway.OpenConnection(); err != nil {
 		panic(err)
 	}
-	if envs.app.runWithCommandRegister {
+	if envs.app.registerItemRegistrarCommand {
 		itemRegistrar := command.ItemRegistrarBuilder(envs.app.appId, envs.app.guildId)
 		err := gateway.RegisterAppCommand(envs.app.appId, envs.app.guildId, itemRegistrar.ApplicationCommand())
 		if err != nil {
@@ -109,7 +119,7 @@ func requiredEnvs() (envs envs, err error) {
 		}
 		withCommandRegister := os.Getenv("WITH_ITEM_REGISTRAR_COMMAND_REGISTER")
 		if withCommandRegister == "false" || withCommandRegister == "true" {
-			envs.app.runWithCommandRegister = withCommandRegister == "true"
+			envs.app.registerItemRegistrarCommand = withCommandRegister == "true"
 		} else {
 			err = errors.New("WITH_ITEM_REGISTRAR_COMMAND_REGISTER environment variable is not provided, should be false or true. Its required in DEV run-time environment")
 			return

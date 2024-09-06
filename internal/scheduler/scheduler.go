@@ -24,6 +24,7 @@ var Scheduler = &scheduler{
 func (t *scheduler) Schedule(jobInfo gateway.Job) {
 	t.mu.Lock()
 	log.Printf("scheduling job %v", jobInfo)
+	log.Printf("yo zimakl  %v", jobInfo)
 	t.q.enqueue(jobInfo)
 	t.mu.Unlock()
 }

@@ -192,16 +192,22 @@ func (offerStorage *offerStorage) listOffersByIdentity(ctx context.Context, dbTa
 	return vendorOffers, nil
 }
 
-func (offerStorage *offerStorage) createTable(ctx context.Context, name string) error {
-	query := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (
+func (offerStorage *offerStorage) createTable(ctx context.Context, offerTableName string) error {
+	itemTableName := ctx.Value(storage.CtxItemTableDescriptorKey).(string)
+	queryItemTable := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (name TEXT PRIMARY KEY)`, itemTableName)
+	queryOfferTable := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS "%s" (
 	id SERIAL PRIMARY KEY, 
 	vendorId TEXT NOT NULL, 
 	price NUMERIC(10,2) NOT NULL, 
 	productName TEXT NOT NULL, 
-	count INTEGER NOT NULL)`, name,
+	count INTEGER NOT NULL,
+	CONSTRAINT fk_name_item FOREIGN KEY (productName) REFERENCES %s (name))`, offerTableName, itemTableName,
 	)
-	if _, err := offerStorage.db.Exec(ctx, query); err != nil {
-		return fmt.Errorf("creating table with name %s: %w", name, err)
+	if _, err := offerStorage.db.Exec(ctx, queryItemTable); err != nil {
+		return fmt.Errorf("creating table with name %s: %w", itemTableName, err)
+	}
+	if _, err := offerStorage.db.Exec(ctx, queryOfferTable); err != nil {
+		return fmt.Errorf("creating table with name %s: %w", offerTableName, err)
 	}
 	return nil
 }

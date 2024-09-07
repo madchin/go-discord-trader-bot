@@ -32,8 +32,7 @@ func (itemRegistrar *itemRegistrar) Add(ctx context.Context, interaction *discor
 		}
 		return newServiceError(ctx, interaction, "item registrar add", errors.New("item already registered"))
 	}
-	choices, err := command.NewChoices(len(items) + 1)
-	if err != nil {
+	if len(items) == command.ChoicesLimit {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterFailLimitExceeded(fmt.Sprintf("%d", command.ChoicesLimit))); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar add", err))
 			return newServiceError(ctx, interaction, "item registrar add", err)
@@ -45,9 +44,16 @@ func (itemRegistrar *itemRegistrar) Add(ctx context.Context, interaction *discor
 		}
 		return newServiceError(ctx, interaction, "item registrar add", err)
 	}
-	appId, guildId := interaction.AppID, interaction.Message.GuildID
-	cmd := command.OfferBuilder(appId, guildId, choices).ApplicationCommand()
-	if err := itemRegistrar.commandRegistrar.RegisterAppCommand(appId, guildId, cmd); err != nil {
+	items = items.Add(incomingItem)
+	choices, err := command.NewChoices(items)
+	if err != nil {
+		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterFail(incomingItem.Name())); err != nil {
+			log.Print(newServiceError(ctx, interaction, "item registrar add", err))
+		}
+		return newServiceError(ctx, interaction, "item registrar add", err)
+	}
+	updatedOfferCmd := command.OfferBuilder(interaction.AppID, interaction.GuildID, choices)
+	if err := itemRegistrar.commandRegistrar.RegisterAppCommand(updatedOfferCmd.ApplicationCommand()); err != nil {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterFail(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar add", err))
 		}
@@ -60,14 +66,14 @@ func (itemRegistrar *itemRegistrar) Add(ctx context.Context, interaction *discor
 }
 
 func (itemRegistrar *itemRegistrar) Remove(ctx context.Context, interaction *discordgo.Interaction, incomingItem item.Item) error {
-	items, err := itemRegistrar.itemStorage.List(ctx)
+	item, err := itemRegistrar.itemStorage.ListByName(ctx, incomingItem)
 	if err != nil {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailRemove(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
 		}
 		return newServiceError(ctx, interaction, "item registrar remove", err)
 	}
-	if !items.Contains(incomingItem) {
+	if item.IsZero() {
 		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemFailRemoveItemNotExist(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
 		}
@@ -79,16 +85,22 @@ func (itemRegistrar *itemRegistrar) Remove(ctx context.Context, interaction *dis
 		}
 		return newServiceError(ctx, interaction, "item registrar remove", err)
 	}
-	choices, _ := command.NewChoices(len(items) - 1)
-	appId, guildId := interaction.AppID, interaction.Message.GuildID
-	cmd := command.OfferBuilder(appId, guildId, choices).ApplicationCommand()
-	if err := itemRegistrar.commandRegistrar.RegisterAppCommand(appId, guildId, cmd); err != nil {
-		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterFail(incomingItem.Name())); err != nil {
+	items, err := itemRegistrar.itemStorage.List(ctx)
+	if err != nil {
+		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRemoveRegisteredFail(incomingItem.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
 		}
 		return newServiceError(ctx, interaction, "item registrar remove", err)
 	}
-	if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRegisterSuccess(incomingItem.Name())); err != nil {
+	choices, _ := command.NewChoices(items)
+	updatedOfferCmd := command.OfferBuilder(interaction.AppID, interaction.GuildID, choices)
+	if err := itemRegistrar.commandRegistrar.RegisterAppCommand(updatedOfferCmd.ApplicationCommand()); err != nil {
+		if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRemoveRegisteredFail(incomingItem.Name())); err != nil {
+			log.Print(newServiceError(ctx, interaction, "item registrar remove", err))
+		}
+		return newServiceError(ctx, interaction, "item registrar remove", err)
+	}
+	if err := itemRegistrar.notifier.SendFollowUpMessage(interaction, followup.ItemRemoveRegisteredSuccess(incomingItem.Name())); err != nil {
 		log.Print(newServiceError(ctx, interaction, "item registrar add", err))
 	}
 	return nil

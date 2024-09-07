@@ -55,7 +55,7 @@ func main() {
 	}
 	if envs.app.runWithCommandRegister {
 		itemRegistrar := command.ItemRegistrarBuilder(envs.app.appId, envs.app.guildId)
-		err := gateway.RegisterAppCommand(envs.app.appId, envs.app.guildId, itemRegistrar.ApplicationCommand())
+		err := gateway.RegisterAppCommand(itemRegistrar.ApplicationCommand())
 		if err != nil {
 			panic(err)
 		}

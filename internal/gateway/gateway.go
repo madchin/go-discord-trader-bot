@@ -53,8 +53,8 @@ func (g *gateway) registerHandlers(handler *handler) {
 	g.session.AddHandler(handler.onUserInteraction)
 }
 
-func (g *gateway) RegisterAppCommand(appId, guildId string, cmd command.ApplicationCommand) error {
-	if _, err := g.session.ApplicationCommandCreate(appId, guildId, cmd.Raw()); err != nil {
+func (g *gateway) RegisterAppCommand(cmd command.ApplicationCommand) error {
+	if _, err := g.session.ApplicationCommandCreate(cmd.Raw().ApplicationID, cmd.Raw().GuildID, cmd.Raw()); err != nil {
 		return fmt.Errorf("gateway register app command: %w", err)
 	}
 	return nil

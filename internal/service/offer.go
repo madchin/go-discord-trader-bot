@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -25,10 +26,10 @@ func (s *offerService) Add(ctx context.Context, interaction *discordgo.Interacti
 		return newServiceError(ctx, interaction, "item add fail", err)
 	}
 	if item.IsZero() {
-		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAdd(vendorOffer.Product.Name())); err != nil {
+		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAddItemNotRegistered(vendorOffer.Product.Name())); err != nil {
 			log.Print(newServiceError(ctx, interaction, "item add fail", err))
 		}
-		return newServiceError(ctx, interaction, "item add fail", err)
+		return newServiceError(ctx, interaction, "item add fail", errors.New("item not exists"))
 	}
 	offers, err := s.offerStorage.ListOffersByIdentity(ctx, vendorOffer.VendorIdentity())
 	if err != nil {

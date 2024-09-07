@@ -52,10 +52,7 @@ func (itemPersistence *itemPersistence) List(ctx context.Context) (item.Items, e
 }
 
 func (itemPersistence *itemPersistence) ListByName(ctx context.Context, incomingItem item.Item) (item.Item, error) {
-	tableName, ok := ctx.Value("item").(string)
-	if !ok {
-		return item.Item{}, fmt.Errorf("ELELELELELL KUAWERAHWJKKDJHASHKJD %v", storage.CtxItemTableDescriptorKey)
-	}
+	tableName := ctx.Value(storage.CtxItemTableDescriptorKey).(string)
 	if err := itemPersistence.createTable(ctx, tableName); err != nil {
 		return item.Item{}, fmt.Errorf("database item list by name: %w", err)
 	}

@@ -91,9 +91,5 @@ func (itemCache *itemCache) list(ctx context.Context) (item.Items, error) {
 }
 
 func cacheKey(ctx context.Context) string {
-	val, ok := ctx.Value(storage.CtxItemTableDescriptorKey).(string)
-	if !ok {
-		return ""
-	}
-	return val
+	return ctx.Value(storage.CtxItemTableDescriptorKey).(string)
 }

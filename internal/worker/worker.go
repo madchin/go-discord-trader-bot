@@ -52,12 +52,12 @@ func Spawner(ctx context.Context, service *service.Service, scheduler scheduler,
 func (w *worker) execute(ctx context.Context, ctxCancel context.CancelFunc, job gateway.Job) {
 	ctx = context.WithValue(
 		ctx,
-		"offer",
+		storage.CtxBuySellDbTableDescriptorKey,
 		storage.TableWithGuildIdSuffix(job.Data().Metadata.Subcommand(), job.Data().Metadata.Interaction().GuildID),
 	)
 	ctx = context.WithValue(
 		ctx,
-		"item",
+		storage.CtxItemTableDescriptorKey,
 		storage.TableWithGuildIdSuffix("item", job.Data().Metadata.Interaction().GuildID),
 	)
 	if isOfferCommand(job) {
@@ -70,7 +70,7 @@ func (w *worker) execute(ctx context.Context, ctxCancel context.CancelFunc, job 
 			log.Printf("error in worker %v", err)
 		}
 	}
-	//ctxCancel()
+	ctxCancel()
 }
 
 func (w *worker) execOffer(ctx context.Context, job gateway.Job) error {

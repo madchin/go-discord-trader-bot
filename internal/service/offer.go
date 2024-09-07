@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -17,19 +18,19 @@ type offerService struct {
 }
 
 func (s *offerService) Add(ctx context.Context, interaction *discordgo.Interaction, vendorOffer offer.VendorOffer) error {
-	// domainItem, err := s.itemStorage.ListByName(ctx, item.New(vendorOffer.Product.Name()))
-	// if err != nil {
-	// 	if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAddItemNotRegistered(vendorOffer.Product.Name())); err != nil {
-	// 		log.Print(newServiceError(interaction, "item add fail", err))
-	// 	}
-	// 	return newServiceError(interaction, "item add fail", err)
-	// }
-	// if domainItem.IsZero() {
-	// 	if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAdd(vendorOffer.Product.Name())); err != nil {
-	// 		log.Print(newServiceError(interaction, "item add fail", err))
-	// 	}
-	// 	return newServiceError(interaction, "item add fail", err)
-	// }
+	item, err := s.itemStorage.ListByName(ctx, item.New(vendorOffer.Product.Name()))
+	if err != nil {
+		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAddItemNotRegistered(vendorOffer.Product.Name())); err != nil {
+			log.Print(newServiceError(interaction, "item add fail", err))
+		}
+		return newServiceError(interaction, "item add fail", err)
+	}
+	if item.IsZero() {
+		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAddItemNotRegistered(vendorOffer.Product.Name())); err != nil {
+			log.Print(newServiceError(interaction, "item add fail", err))
+		}
+		return newServiceError(interaction, "item add fail", errors.New("item not exists"))
+	}
 	offers, err := s.offerStorage.ListOffersByIdentity(ctx, vendorOffer.VendorIdentity())
 	if err != nil {
 		if err := s.notifier.SendFollowUpMessage(interaction, followup.OfferFailAdd(vendorOffer.Product.Name())); err != nil {

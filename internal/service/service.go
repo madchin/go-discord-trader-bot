@@ -13,7 +13,7 @@ type messageProducer interface {
 }
 
 type commandRegistrar interface {
-	RegisterAppCommand(appId, guildId string, cmd command.ApplicationCommand) error
+	RegisterAppCommand(cmd command.ApplicationCommand) error
 }
 
 type botService interface {
@@ -30,6 +30,7 @@ func New(offerStorage offer.Repository, itemStorage item.Repository, botService 
 	return &Service{
 		Offer: &offerService{
 			offerStorage: offerStorage,
+			itemStorage:  itemStorage,
 			notifier:     botService.(messageProducer),
 		},
 		ItemRegistrar: &itemRegistrar{

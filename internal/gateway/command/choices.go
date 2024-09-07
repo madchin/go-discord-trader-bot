@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/madchin/trader-bot/internal/domain/item"
 )
 
 const ChoicesLimit = 25
@@ -16,20 +17,27 @@ type Choices struct {
 	c []*discordgo.ApplicationCommandOptionChoice
 }
 
-func NewChoices(size int) (*Choices, error) {
-	if isLimitReached(size) {
+func NewChoices(items item.Items) (*Choices, error) {
+	if isLimitExceeded(len(items)) {
 		return nil, errLimitReached(ChoicesLimit)
 	}
-	return &Choices{make([]*discordgo.ApplicationCommandOptionChoice, 0, size)}, nil
+	choices := &Choices{make([]*discordgo.ApplicationCommandOptionChoice, len(items))}
+	choices.seedWithItems(items)
+	return choices, nil
 }
 
-func (choices *Choices) AddNext(choice *discordgo.ApplicationCommandOptionChoice) error {
-	choices.c = append(choices.c, choice)
-	return nil
+func (choices *Choices) seedWithItems(items item.Items) {
+	for i := 0; i < len(choices.c); i++ {
+		choice := &discordgo.ApplicationCommandOptionChoice{
+			Name:  items[i].Name(),
+			Value: items[i].Name(),
+		}
+		choices.c[i] = choice
+	}
 }
 
-func isLimitReached(size int) (ok bool) {
-	if size == ChoicesLimit {
+func isLimitExceeded(size int) (ok bool) {
+	if size > ChoicesLimit {
 		ok = true
 	}
 	return

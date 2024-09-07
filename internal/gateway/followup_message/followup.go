@@ -43,10 +43,11 @@ type (
 		failOnNotHavingAnyOffers metadata
 	}
 	item struct {
-		add      *itemAdd
-		remove   *itemRemove
-		list     *itemListAll
-		register *itemRegister
+		add        *itemAdd
+		remove     *itemRemove
+		list       *itemListAll
+		register   *itemRegister
+		unregister *itemUnregister
 	}
 	itemAdd struct {
 		success              metadata
@@ -67,6 +68,10 @@ type (
 		success           metadata
 		fail              metadata
 		failLimitExceeded metadata
+	}
+	itemUnregister struct {
+		success metadata
+		fail    metadata
 	}
 )
 
@@ -127,6 +132,10 @@ var followUpMessage = &followUp{
 			success:           metadata{"item_register_success"},
 			fail:              metadata{"item_register_fail"},
 			failLimitExceeded: metadata{"item_register_fail_limit_exceeded"},
+		},
+		unregister: &itemUnregister{
+			success: metadata{"item_unregister_success"},
+			fail:    metadata{"item_unregister_fail"},
 		},
 	},
 }
@@ -224,6 +233,12 @@ var (
 	}
 	OfferFailAddItemNotRegistered = func(name string) Message {
 		return Message{followUpMessage.offer.add.failItemNotRegistered, fmt.Sprintf("Unable to add item %s because it is not registered", name), name}
+	}
+	ItemRemoveRegisteredFail = func(name string) Message {
+		return Message{followUpMessage.item.unregister.fail, fmt.Sprintf("Failed to unregister item %s. Please try again.", name), name}
+	}
+	ItemRemoveRegisteredSuccess = func(name string) Message {
+		return Message{followUpMessage.item.unregister.success, fmt.Sprintf("Successfully unregistered item %s! Need more help? Just ask!", name), name}
 	}
 )
 
@@ -602,6 +617,30 @@ var messageBucket = map[metadata][]messageGenerator{
 		}),
 		messageGenerator(func(name string) Message {
 			return Message{followUpMessage.offer.add.failItemNotRegistered, fmt.Sprintf("Item %s isn't registered, so it can't be added. Please register the item and try again.", name), name}
+		}),
+	},
+	followUpMessage.item.unregister.fail: {
+		messageGenerator(ItemRemoveRegisteredFail),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.unregister.fail, fmt.Sprintf("Oops, we couldn't unregister item %s. Please try again or get help!", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.unregister.fail, fmt.Sprintf("Failed to unregister %s. Need some assistance or want to try again?", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.unregister.fail, fmt.Sprintf("Something went wrong while trying to unregister %s. Let's give it another go!", name), name}
+		}),
+	},
+	followUpMessage.item.unregister.success: {
+		messageGenerator(ItemRemoveRegisteredSuccess),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.unregister.success, fmt.Sprintf("Item %s successfully unregistered! Let us know if you need further help.", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.unregister.success, fmt.Sprintf("Great! Item %s was unregistered without any issues. Need anything else?", name), name}
+		}),
+		messageGenerator(func(name string) Message {
+			return Message{followUpMessage.item.unregister.success, fmt.Sprintf("Unregistered item %s successfully! Feel free to reach out for more support.", name), name}
 		}),
 	},
 }

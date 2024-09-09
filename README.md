@@ -1,7 +1,7 @@
 ## Trader Bot
 
 * Bot for trading items
-
+```
 Want to create market for your discord? 
 
 Would you like to declare what items ppl will trading on your server?
@@ -15,9 +15,9 @@ Items will be shown when user will write a command as a drop/down list tooltip.
 
 There is also rate limit for registering commands per guild, so be cautious.
 When writing this project limit is **200** and resets after 24h.
-
+```
 * Actual supported commands:
-
+```
     /item-register
         add {itemName} --- Register new item with *{name}*
         remove {itemName} --- Remove registered item with *{name}*
@@ -46,7 +46,7 @@ When writing this project limit is **200** and resets after 24h.
         update-count {itemName}, {pricePerEachItem}, {updateCount}
         list-for-name {itemName}
         list-mine
-
+```
 ---
 
 ## Project overview
@@ -70,8 +70,7 @@ When writing this project limit is **200** and resets after 24h.
     * Or ```chmod +x quick_env_setup && ./quick_env_setup```
 
     * Or manually, described below:
-
-```md
+```
 **File:** .app.env
 
 **Content**
@@ -98,7 +97,7 @@ random
 **Content**
 random
 **EOF Content**
-
+```
 ---
 
 * Description of all needed environment variables / its content:
@@ -131,7 +130,6 @@ random
     ***.db.user***
 
     * Provides database user for db provider via docker secret
-```
 
 ---
 
